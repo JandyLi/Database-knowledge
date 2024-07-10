@@ -1,42 +1,212 @@
+# 数据库概述
+
+## 为什么要使用数据库
+
+- 持久化(persistence)：把数据保存到可掉电式存储设备中以供之后使用。大多数情况下，特别是企业级应用， 数据持久化意味着将内存中的数据保存到硬盘上加以”固化”，而持久化的实现过程大多通过各种关系数据库来完成
+- 持久化的主要作用是将内存中的数据存储在关系型数据库中，当然也可以存储在磁盘文件、XML数据文件中
+
+![](MySQL基础篇_img/为什么要使用数据库.jpg)
 
 
-# 导入表的问题
 
-**导入数据时外键约束问题**
+## 数据库的相关概念
 
-数据导入指令：
+| DB：数据库                                                   |
+| ------------------------------------------------------------ |
+| 即存储数据的“仓库”，其本质是一个文件系统。它保存了一系列有组织的数据 |
+| **DBMS : 数据库管理系统（Database Management System）**      |
+| 是一种操纵和管理数据库的大型软件，用于建立、使用和维护数据库，对数据库进行统一管理和控制。用户通过数据库管理系统访问数据库中表内的数据 |
+| **SQL ：语言结构化chaxun （Structured Query Language）**     |
+| 专门用来与数据库通信的语言                                   |
+
+
+
+# 初识MySQL
+
+## 命令行登陆
+
+- 格式
 
 ```mysql
-source d:\xxx.sql
+mysql -h 主机名 -P 端口号 -u 用户名 -p密码
 ```
-
-通过FOREIGN_KEY_CHECKS解决，用法如下：
 
 ```mysql
-set FOREIGN_KEY_CHECKS=0;  #在导入前设置为不检查外键约束
-set FOREIGN_KEY_CHECKS=1;  #在导入后恢复检查外键约束
+mysql -h localhost -P 3306 -u root -p
 ```
 
 
 
-# 最基本的SELECT语句
+> -p与密码之间不能有空格，其他参数名与参数值之间可以有空格也可以没有空格
+
+> 密码建议在下一行输入，保证安全
+
+> 客户端和服务器在同一台机器上，所以输入localhost或者IP地址127.0.0.1。同时，因为是连接本 机： -hlocalhost就可以省略，如果端口号没有修改：-P3306也可以省略
 
 
 
-## 1. SQL语言的规则和规范
+## MySQL数据库相关信息
 
-### 1) 基本规则
+- 查看所有的数据库
+
+```mysql
+show databases;
+```
+
+> “information_schema”是 MySQL 系统自带的数据库，主要保存 MySQL 数据库服务器的系统信息， 比如数据库的名称、数据表的名称、字段名称、存取权限、数据文件所在的文件夹和系统使用的文件夹，等等
+
+> “performance_schema”是 MySQL 系统自带的数据库，可以用来监控 MySQL 的各类性能指标。 “sys”数据库是 MySQL 系统自带的数据库，主要作用是以一种更容易被理解的方式展示 MySQL 数据库服务器的各类性能指标，帮助系统管理员和开发人员监控 MySQL 的技术性能
+
+> “mysql”数据库保存了 MySQL 数据库服务器运行时需要的系统信息，比如数据文件夹、当前使用的 字符集、约束检查信息，等等
+
+- 创建自己的数据库
+
+```mysql
+create database 数据库名;
+# 该名称不能与已经存在的数据库重名
+```
+
+- 使用自己的数据库
+
+```mysql
+use 数据库名;
+```
+
+> 如果没有使用use语句，后面针对数据库的操作也没有加“数据名”的限定，那么会报“ERROR 1046 (3D000): No database selected”（没有选择数据库）
+
+> 使用完use语句之后，如果接下来的SQL都是针对一个数据库操作的，那就不用重复use了，如果要针对另 一个数据库操作，那么要重新use
+
+- 查看某个库的所有表格
+
+```mysql
+show tables;
+#要求前面有use语句
+
+show tables from 数据库名;
+```
+
+- 创建新的表格
+
+```mysql
+create table 表名称( 
+    字段名 数据类型, 
+    字段名 数据类型 
+);
+```
+
+> 如果是最后一个字段，后面就不用加逗号，因为逗号的作用是分割每个字段
+
+```mysql
+#创建学生表 
+create table student(
+    id int,
+    name varchar(20) #名字最长不超过20个字符
+);
+```
+
+- 查看一个表的数据
+
+```mysql
+select * from 数据库表名称;
+```
+
+```mysql
+#查看学生表的数据 
+select * from student;
+```
+
+- 添加一条记录
+
+```mysql
+insert into 表名称 values(值列表);
+
+#添加两条记录到student表中 
+insert into student values(1,'张三'); 
+insert into student values(2,'李四');
+```
+
+- 查看表的创建信息
+
+```mysql
+show create table 表名称\G
+
+#查看student表的详细创建信息 
+show create table student\G
+```
+
+- 查看数据库的创建信息
+
+```mysql
+show create database 数据库名\G
+
+#查看atguigudb数据库的详细创建信息 
+show create database HNU\G
+```
+
+- 删除表格
+
+```mysql
+drop table 表名称;
+
+#删除学生表 
+drop table student;
+```
+
+- 删除数据库
+
+```mysql
+drop database 数据库名;
+
+#删除atguigudb数据库 
+drop database HNU;
+```
+
+
+
+
+
+# 基本的SELECT语句
+
+## SQL分类
+
+### DDL（Data Definition Languages 数据定义语言）
+
+- 这些语句定义了不同的数据库、表、视图、索引等数据库对象，还可以用来创建、删除、修改数据库和数据表的结构
+- 主要的语句关键字包括 CREATE 、 DROP 、 ALTER 等
+
+### DML（Data Manipulation Language 数据操作语言）
+
+- 用于添加、删除、更新和查询数据库记录，并检查数据完整性
+- 主要的语句关键字包括 INSERT 、 DELETE 、 UPDATE 、 SELECT 等
+- SELECT是SQL语言的基础，最为重要
+
+### DCL（Data Control Language 数据控制语言）
+
+- 用于定义数据库、表、字段、用户的访问权限和安全级别
+- 主要的语句关键字包括 GRANT 、 REVOKE 、 COMMIT 、 ROLLBACK 、 SAVEPOINT 等
+
+> 因为查询语句使用的非常频繁，所以很多人把查询语句单拎出来一类：DQL（数据查询语言）
+
+> 还有单独将COMMIT 、ROLLBACK取出来称为TCL（Transaction Control Language，事务控制语言）
+
+
+
+
+
+##  SQL语言的规则和规范
+
+### 基本规则
 
 * SQL 可以写在一行或者多行。为了提高可读性，各子句分行写，必要时使用缩进 
 * 每条命令以 ; 或 \g 或 \G 结束 
 * 关键字不能被缩写也不能分行 
 * 关于标点符号 
-  * 必须保证所有的()、单引号、双引号是成对结束的 
+  * 必须保证所有的( )、单引号、双引号是成对结束的 
   * 必须使用英文状态下的半角输入方式 
-  * 字符串型和日期时间类型的数据可以使用单引号（' '）表示 
+  * 字符串型和日期时间类型的数据可以使用单引号（'  '）表示 
   * 列的别名，尽量使用双引号（" "），而且不建议省略as
 
-### 2) SQL大小写规范（建议遵守）
+### SQL大小写规范（建议遵守）
 
 * MySQL 在 Windows 环境下是大小写不敏感的 
 * MySQL 在 Linux 环境下是大小写敏感的 
@@ -46,27 +216,51 @@ set FOREIGN_KEY_CHECKS=1;  #在导入后恢复检查外键约束
   * 数据库名、表名、表别名、字段名、字段别名等都小写 
   * SQL 关键字、函数名、绑定变量等都大写
 
-### 3) 注释
+### 注释
 
 ```mysql
-单行注释：#注释文字(MySQL特有的方式)
+单行注释：# 注释文字(MySQL特有的方式)
 单行注释：-- 注释文字(--后面必须包含一个空格。)
 多行注释：/* 注释文字 */
 ```
 
-### 4) 命名规则
+### 命名规则
 
 * 数据库、表名不得超过30个字符，变量名限制为29个 
 * 必须只能包含 A–Z, a–z, 0–9, _共63个字符 
-* 数据库名、表名、字段名等对象名中间不要包含空格 同一个MySQL软件中，数据库不能同名；同一个库中，表不能重名；
-* 同一个表中，字段不能重名 必须保证你的字段没有和保留字、数据库系统或常用方法冲突。如果坚持使用，请在SQL语句中使 用`（着重号）引起来 
-* 保持字段名和类型的一致性，在命名字段并为其指定数据类型的时候一定要保证一致性。假如数据 类型在一个表里是整数，那在另一个表里可就别变成字符型了
+* 数据库名、表名、字段名等对象名中间不要包含空格 
+* 同一个MySQL软件中，数据库不能同名；同一个库中，表不能重名；同一个表中，字段不能重名 
+* 必须保证你的字段没有和保留字、数据库系统或常用方法冲突。如果坚持使用，请在SQL语句中使 用`（着重号）引起来 
+* 保持字段名和类型的一致性，在命名字段并为其指定数据类型的时候一定要保证一致性。假如数据类型在一个表里是整数，那在另一个表里可就别变成字符型了
 
 
 
-## 2. 基本的SELECT语句
+## 导入表的问题
 
-### 1) SELECT ... FROM
+### 导入数据时外键约束问题
+
+- 数据导入指令
+
+
+```mysql
+source d:\xxx.sql
+```
+
+- 通过FOREIGN_KEY_CHECKS解决，用法如下：
+
+
+```mysql
+set FOREIGN_KEY_CHECKS=0;  #在导入前设置为不检查外键约束
+set FOREIGN_KEY_CHECKS=1;  #在导入后恢复检查外键约束
+```
+
+
+
+
+
+## 基本的SELECT语句
+
+### SELECT ... FROM
 
 * 语法
 
@@ -82,6 +276,10 @@ SELECT *
 FROM departments;
 ```
 
+> 一般情况下，除非需要使用表中所有的字段数据，最好不要使用通配符‘*’。使用通配符虽然可以节省输入查询语句的时间，但是获取不需要的列数据通常会降低查询和所使用的应用程序的效率。通配符的优势是，当不知道所需要的列的名称时，可以通过它获取它们
+
+> 在生产环境下，不推荐直接使用SELECT * 进行查询
+
 * 选择特定的列：
 
 ```mysql
@@ -89,11 +287,11 @@ SELECT department_id, location_id
 FROM departments;
 ```
 
-### 2) 列的别名
+### 列的别名
 
 * 重命名一个列 
 * 便于计算 
-* 紧跟列名，也可以在列名和别名之间加入关键字AS，别名使用双引号，以便在别名中包含空格或特 殊的字符并区分大小写。 
+* 紧跟列名，也可以在列名和别名之间加入关键字AS，别名使用双引号，以便在别名中包含空格或特殊的字符并区分大小写
 * AS 可以省略 
 * 建议别名简短，见名知意 
 * 举例：
@@ -103,47 +301,62 @@ SELECT last_name AS name, commission_pct comm
 FROM employees;
 ```
 
-### 3) 去除重复行
+### 去除重复行
 
-DISTINCT关键字
+- 默认情况下，查询会返回全部行，包括重复行
+
+#### DISTINCT关键字
 
 ```mysql
 SELECT DISTINCT department_id FROM employees;
 ```
 
-### 4) 空值参与运算
+> DISTINCT 需要放到所有列名的前面，如果写成 SELECT salary, DISTINCT department_id FROM employees 会报错
 
-空值：null ( 不等同于0, ’ ‘, ’null‘ )
+> DISTINCT 其实是对后面所有列名的组合进行去重，你能看到最后的结果是 74 条，因为这 74 个部门id不同，都有 salary 这个属性值。如果想要看都有哪些不同的部门（department_id），只需要写 DISTINCT department_id 即可，后面不需要再加其他的列名了
 
-实际问题的解决方案：引入IFNULL
+### 空值参与运算
+
+- 空值：null ( 不等同于0, ’ ‘, ’null‘ )
+
+
+- 实际问题的解决方案：引入IFNULL
+- 所有运算符或列值遇到null值，运算的结果都为null
 
 ```mysql
-SELECT employee_id, salary "月工资", salary * (1 + IFNULL(commission_pct, 0)) * 12 "年工资" FROM employees;
+SELECT employee_id, salary "月工资", salary * (1 + IFNULL(commission_pct, 0)) * 12 "年工资" 
+FROM employees;
 ```
 
-这里你一定要注意，在 MySQL 里面， 空值不等于空字符串。一个空字符串的长度是 0，而一个空值的长 度是空。而且，在 MySQL 里面，空值是占用空间的。
+> 在 MySQL 里面， 空值不等于空字符串。一个空字符串的长度是 0，而一个空值的长度是空。而且，在 MySQL 里面，空值是占用空间的
+>
 
-### 5) 着重号 ``
+### 着重号 ``
 
-必须保证你的字段没有和保留字、数据库系统或常见方法冲突。
+- 必须保证你的字段没有和保留字、数据库系统或常见方法冲突
 
-如果坚持使用，在SQL语句中使用 \` \` 引起来。
+
+- 如果坚持使用，在SQL语句中使用 \` \` 引起来。
+
 
 ```mysql
 SELECT * FROM `order`;
 ```
 
-### 6) 查询常数
+### 查询常数
 
 ```mysql
 SELECT '小张科技' as "公司名", employee_id, last_name FROM employees;
 ```
 
+> 对 employees 数据表中的员工姓名进行查询，同时增加一列字段 公司名
 
 
-## 3. 显示表结构
 
-显示表中字段的详细信息
+##  显示表结构
+
+- 显示表中字段的详细信息
+
 
 ```mysql
 DESCRIBE employees;
@@ -173,21 +386,21 @@ mysql> desc employees;
 
 其中，各个字段的含义分别解释如下： 
 
-* Field：表示字段名称。 
-* Type：表示字段类型，这里 barcode、goodsname 是文本型的，price 是整数类型的。 
-* Null：表示该列是否可以存储NULL值。 
-* Key：表示该列是否已编制索引。
-* PRI表示该列是表主键的一部分；
-* UNI表示该列是UNIQUE索引的一 部分；
-* MUL表示在列中某个给定值允许出现多次。 
-* Default：表示该列是否有默认值，如果有，那么值是多少。 
-* Extra：表示可以获取的与给定列有关的附加信息，例如AUTO_INCREMENT等。
+* Field：表示字段名称
+* Type：表示字段类型，这里 barcode、goodsname 是文本型的，price 是整数类型的
+* Null：表示该列是否可以存储NULL值
+* Key：表示该列是否已编制索引
+* PRI表示该列是表主键的一部分
+* UNI表示该列是UNIQUE索引的一部分
+* MUL表示在列中某个给定值允许出现多次
+* Default：表示该列是否有默认值，如果有，那么值是多少
+* Extra：表示可以获取的与给定列有关的附加信息，例如AUTO_INCREMENT等
 
 
 
-## 4. 过滤数据
+## 过滤数据
 
-* 语法：
+### 语法
 
 ```mysql
 SELECT 字段1,字段2
@@ -195,9 +408,10 @@ FROM 表名
 WHERE 过滤条件
 ```
 
-使用WHERE 子句，将不满足条件的行过滤掉。WHERE子句紧随 FROM子句。
+- 使用WHERE 子句，将不满足条件的行过滤掉
+- WHERE子句紧随 FROM子句
 
-* 举例：
+### 举例
 
 ```mysql
 SELECT employee_id, last_name, job_id, department_id
@@ -209,30 +423,69 @@ WHERE department_id = 90;
 
 # 运算符
 
-**DUAL** 伪表
+## 算术运算符
 
-## 1. 算术运算符
+![](/Users/lyz/Desktop/Knowledge System/数据库/MySQL基础篇_img/算术运算符.png)
 
 ```mysql
-SELECT 100 + 0, 100 + 50 * 30, 100 - 35.5 FROM DUAL;
+mysql> SELECT 100, 100 + 0, 100 - 0, 100 + 50, 100 + 50 -30, 100 + 35.5, 100 - 35.5 
+FROM dual; 
++-----+---------+---------+----------+--------------+------------+------------+ 
+| 100 | 100 + 0 | 100 - 0 | 100 + 50 | 100 + 50 -30 | 100 + 35.5 | 100 - 35.5 | 
++-----+---------+---------+----------+--------------+------------+------------+ 
+| 100 | 100 | 100 | 150 | 120 | 135.5 | 64.5 | 
++-----+---------+---------+----------+--------------+------------+------------+ 
+1 row in set (0.00 sec)
 ```
 
-> + 一个整数类型的值对整数进行加法和减法操作，结果还是一个整数；
-> + 一个整数类型的值对浮点数进行加法和减法操作，结果是一个浮点数；
-> + 在Java中， + 的左右两边如果有字符串，那么表示字符串的拼接。但是在MySQL中 + 只表示数值相加。如果遇到非数值类型，先尝试转成数值，如果转失败，就按0计算。（注：MySQL 中字符串拼接要使用字符串函数CONCAT()实现）
-> + 在数学运算中，0不能用作除数，在MySQL中，一个数除以0为NULL。
+```mysql
+mysql> SELECT 100, 100 * 1, 100 * 1.0, 100 / 1.0, 100 / 2,100 + 2 * 5 / 2,100 /3, 100 DIV 0 
+FROM dual; 
++-----+---------+-----------+-----------+---------+-----------------+---------+-----------+
+| 100 | 100 * 1 | 100 * 1.0 | 100 / 1.0 | 100 / 2 | 100 + 2 * 5 / 2 | 100 /3 | 100 DIV 0 | 
++-----+---------+-----------+-----------+---------+-----------------+---------+-----------+
+| 100 | 100 | 100.0 | 100.0000 | 50.0000 | 105.0000 | 33.3333 | NULL | 
++-----+---------+-----------+-----------+---------+-----------------+---------+-----------+
+1 row in set (0.00 sec)
+```
+
+> 一个整数类型的值对整数进行加法和减法操作，结果还是一个整数
+
+> 一个整数类型的值对浮点数进行加法和减法操作，结果是一个浮点数
+
+> 在$Java$中， + 的左右两边如果有字符串，那么表示字符串的拼接
+>
+> 但是在MySQL中 + 只表示数值相加。如果遇到非数值类型，先尝试转成数值，如果转失败，就按0计算。（注：MySQL 中字符串拼接要使用字符串函。CONCAT()实现）
+
+> 一个数乘以整数1和除以整数1后仍得原数
+
+> 一个数乘以浮点数1和除以浮点数1后变成浮点数，数值与原数相等
+
+> 一个数除以整数后，不管是否能除尽，结果都为一个浮点数
+
+> 一个数除以另一个数，除不尽时，结果为一个浮点数，并保留到小数点后4位
+
+> 乘法和除法的优先级相同，进行先乘后除操作与先除后乘操作，得出的结果相同
+
+> 在数学运算中，0不能用作除数，在MySQL中，一个数除以0为NULL
+
+> DUAL 是伪表
 
 
 
-## 2. 比较运算符
+## 比较运算符
 
-### 1) 等号运算符
+- 比较运算符用来对表达式左边的操作数和右边的操作数进行比较，比较的结果为真则返回1，比较的结果为假则返回0，其他情况则返回NULL
 
-比较运算符用来对表达式左边的操作数和右边的操作数进行比较，比较的结果为真则返回1，比较的结果 为假则返回0，其他情况则返回NULL。 
 
-比较运算符经常被用来作为SELECT查询语句的条件来使用，返回符合条件的结果记录。
+- 比较运算符经常被用来作为SELECT查询语句的条件来使用，返回符合条件的结果记录
 
-如果等号两边的值、字符串或表达式中有一个为NULL，则比较结果为NULL。
+
+- 如果等号两边的值、字符串或表达式中有一个为NULL，则比较结果为NULL
+
+![](MySQL基础篇_img/比较运算符.jpg)
+
+### 等号运算符
 
 ```mysql
 mysql> SELECT 1 = 1, 1 = '1', 1 = 0, 'a' = 'a', (5 + 3) = (2 + 6), '' = NULL , NULL = NULL;
@@ -254,13 +507,22 @@ mysql> SELECT 1 = 2, 0 = 'abc', 1 = 'abc' FROM DUAL;
 1 row in set, 2 warnings (0.00 sec)
 ```
 
-> + 如果等号两边的值、字符串或表达式都为字符串，则MySQL会按照字符串进行比较，其比较的 是每个字符串中字符的ANSI编码是否相等。 
-> + 如果等号两边的值都是整数，则MySQL会按照整数来比较两个值的大小。 
-> + 如果等号两边的值一个是整数，另一个是字符串，则MySQL会将字符串转化为数字进行比较。 
-> + 如果等号两边的值、字符串或表达式中有一个为NULL，则比较结果为NULL。
+> 等号运算符（=）判断等号两边的值、字符串或表达式是否相等，如果相等则返回1，不相等则返回 0
+
+> 如果等号两边的值、字符串或表达式都为字符串，则MySQL会按照字符串进行比较，其比较的是每个字符串中字符的ANSI编码是否相等
+
+> 如果等号两边的值都是整数，则MySQL会按照整数来比较两个值的大小
+
+> 如果等号两边的值一个是整数，另一个是字符串，则MySQL会将字符串转化为数字进行比较
+
+> 如果等号两边的值、字符串或表达式中有一个为NULL，则比较结果为NULL
+
+
+
+#### 安全等于运算符
 
 ```mysql
-ysql> SELECT 1 <=> '1', 1 <=> 0, 'a' <=> 'a', (5 + 3) <=> (2 + 6), '' <=> NULL,NULL <=> NULL FROM dual;
+mysql> SELECT 1 <=> '1', 1 <=> 0, 'a' <=> 'a', (5 + 3) <=> (2 + 6), '' <=> NULL,NULL <=> NULL FROM dual;
 +-----------+---------+-------------+---------------------+-------------+---------------+
 | 1 <=> '1' | 1 <=> 0 | 'a' <=> 'a' | (5 + 3) <=> (2 + 6) | '' <=> NULL | NULL <=> NULL |
 +-----------+---------+-------------+---------------------+-------------+---------------+
@@ -269,11 +531,14 @@ ysql> SELECT 1 <=> '1', 1 <=> 0, 'a' <=> 'a', (5 + 3) <=> (2 + 6), '' <=> NULL,N
 1 row in set (0.00 sec)
 ```
 
-可以看到，使用安全等于运算符时，两边的操作数的值都为NULL时，返回的结果为1而不是NULL，其他返回结果与等于运算符相同。
+- 可以看到，使用安全等于运算符时，两边的操作数的值都为NULL时，返回的结果为1而不是NULL，其他返回结果与等于运算符相同
 
-### 2) 不等于运算符
 
-不等于运算符（<>和!=）用于判断两边的数字、字符串或者表达式的值是否不相等， 如果不相等则返回1，相等则返回0。不等于运算符不能判断NULL值。如果两边的值有任意一个为NULL， 或两边都为NULL，则结果为NULL。 SQL语句示例如下：
+### 不等于运算符
+
+- 不等于运算符（<>和!=）用于判断两边的数字、字符串或者表达式的值是否不相等， 如果不相等则返回1，相等则返回0
+- 不等于运算符不能判断NULL值。如果两边的值有任意一个为NULL， 或两边都为NULL，则结果为NULL
+- SQL语句示例如下：
 
 ```mysql
 mysql> SELECT 1 <> 1, 1 != 2, 'a' != 'b', (3+4) <> (2+6), 'a' != NULL, NULL <> NULL;
@@ -285,13 +550,17 @@ mysql> SELECT 1 <> 1, 1 != 2, 'a' != 'b', (3+4) <> (2+6), 'a' != NULL, NULL <> N
 1 row in set (0.00 sec)
 ```
 
-此外，还有非符号类型的运算符：
+- 此外，还有非符号类型的运算符：
+
 
 ![](MySQL基础篇_img/非符号运算符.png)
 
-### 3) 空运算符
 
-空运算符 (IS NULL 或者 ISNULL) 判断一个值是否为NULL，如果为NULL则返回1，否则返回0。
+
+### 空运算符
+
+- 空运算符 (IS NULL 或者 ISNULL) 判断一个值是否为NULL，如果为NULL则返回1，否则返回0
+
 
 ```mysql
 mysql> SELECT NULL IS NULL, ISNULL(NULL), ISNULL('a'), 1 IS NULL;
@@ -303,13 +572,52 @@ mysql> SELECT NULL IS NULL, ISNULL(NULL), ISNULL('a'), 1 IS NULL;
 1 row in set (0.00 sec)
 ```
 
-### 4) 非空运算符
+```mysql
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE commission_pct IS NULL; 
 
-非空运算符（IS NOT NULL）判断一个值是否不为NULL，如果不为NULL则返回1，否则返回0。
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE commission_pct <=> NULL; 
 
-### 5) 最小值运算符
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE ISNULL(commission_pct); 
 
-语法格式为：LEAST(值1，值2，...，值n)。其中，“值n”表示参数列表中有n个值。在有 两个或多个参数的情况下，返回最小值。
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE commission_pct = NULL;
+```
+
+
+
+
+
+### 非空运算符
+
+- 非空运算符（IS NOT NULL）判断一个值是否不为NULL，如果不为NULL则返回1，否则返回0
+
+```mysql
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE commission_pct IS NOT NULL; 
+
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE NOT commission_pct <=> NULL; 
+
+SELECT employee_id,commission_pct 
+FROM employees 
+WHERE NOT ISNULL(commission_pct);
+```
+
+
+
+### 最小值运算符
+
+- 语法格式为：LEAST(值1，值2，...，值n)。其中，“值n”表示参数列表中有n个值
+- 在有两个或多个参数的情况下，返回最小值
 
 ```mysql
 mysql> SELECT LEAST (1,0,2), LEAST('b','a','c'), LEAST(1,NULL,2);
@@ -321,11 +629,17 @@ mysql> SELECT LEAST (1,0,2), LEAST('b','a','c'), LEAST(1,NULL,2);
 1 row in set (0.00 sec)
 ```
 
-由结果可以看到，当参数是整数或者浮点数时，LEAST将返回其中最小的值；当参数为字符串时，返回字 母表中顺序最靠前的字符；当比较值列表中有NULL时，不能判断大小，返回值为NULL。
+- 由结果可以看到，当参数是整数或者浮点数时，LEAST将返回其中最小的值
+- 当参数为字符串时，返回字母表中顺序最靠前的字符
+- 当比较值列表中有NULL时，不能判断大小，返回值为NULL
 
-### 6) 最大值运算符
 
-语法格式为：GREATEST(值1，值2，...，值n)。其中，n表示参数列表中有n个值。当有 两个或多个参数时，返回值为最大值。假如任意一个自变量为NULL，则GREATEST()的返回值为NULL。
+
+### 最大值运算符
+
+- 语法格式为：GREATEST(值1，值2，...，值n)。其中，n表示参数列表中有n个值
+- 当有两个或多个参数时，返回值为最大值
+- 假如任意一个自变量为NULL，则GREATEST()的返回值为NULL
 
 ```mysql
 mysql> SELECT GREATEST(1,0,2), GREATEST('b','a','c'), GREATEST(1,NULL,2);
@@ -337,15 +651,29 @@ mysql> SELECT GREATEST(1,0,2), GREATEST('b','a','c'), GREATEST(1,NULL,2);
 1 row in set (0.00 sec)
 ```
 
-由结果可以看到，当参数中是整数或者浮点数时，GREATEST将返回其中最大的值；当参数为字符串时， 返回字母表中顺序最靠后的字符；当比较值列表中有NULL时，不能判断大小，返回值为NULL。
+- 由结果可以看到，当参数中是整数或者浮点数时，GREATEST将返回其中最大的值
+- 当参数为字符串时， 返回字母表中顺序最靠后的字符
+- 当比较值列表中有NULL时，不能判断大小，返回值为NULL
 
-### 7) BETWEEN AND运算符
 
-BETWEEN运算符使用的格式通常为SELECT D FROM TABLE WHERE C BETWEEN A AND B，此时，当C大于或等于A，并且C小于或等于B时，结果为1，否则结果为0。
 
-### 8) IN运算符
+### BETWEEN AND运算符
 
-IN运算符用于判断给定的值是否是IN列表中的一个值，如果是则返回1，否则返回0。如果给 定的值为NULL，或者IN列表中存在NULL，则结果为NULL。
+- BETWEEN运算符使用的格式通常为
+
+```mysql
+SELECT D 
+FROM TABLE 
+WHERE C BETWEEN A AND B
+# 此时，当C大于或等于A，并且C小于或等于B时，结果为1，否则结果为0
+```
+
+
+
+### IN运算符
+
+- IN运算符用于判断给定的值是否是IN列表中的一个值，如果是则返回1，否则返回0
+- 如果给定的值为NULL，则结果为NULL
 
 ```mysql
 mysql> SELECT 'a' IN ('a','b','c'), 1 IN (2,3), NULL IN ('a','b'), 'a' IN ('a', NULL);
@@ -356,70 +684,336 @@ mysql> SELECT 'a' IN ('a','b','c'), 1 IN (2,3), NULL IN ('a','b'), 'a' IN ('a', 
 +----------------------+------------+-------------------+--------------------+
 ```
 
-### 9) NOT IN运算符
 
-NOT IN运算符用于判断给定的值是否不是IN列表中的一个值，如果不是IN列表中的一 个值，则返回1，否则返回0。
 
-### 10) LIKE运算符
+### NOT IN运算符
 
-LIKE运算符主要用来匹配字符串，通常用于模糊匹配，如果满足条件则返回1，否则返回 0。如果给定的值或者匹配条件为NULL，则返回结果为NULL。
+- NOT IN运算符用于判断给定的值是否不是IN列表中的一个值，如果不是IN列表中的一 个值，则返回1，否则返回0
+
+
+
+### LIKE运算符
+
+- LIKE运算符主要用来匹配字符串，通常用于模糊匹配，如果满足条件则返回1，否则返回 0
+- 如果给定的值或者匹配条件为NULL，则返回结果为NULL
 
 ```mysql
 “%”：匹配0个或多个字符。
 “_”：只能匹配一个字符。
 ```
 
-### 11) ESCAPE
+```mysql
+mysql> SELECT NULL LIKE 'abc', 'abc' LIKE NULL; 
++-----------------+-----------------+ 
+| NULL LIKE 'abc' | 'abc' LIKE NULL | 
++-----------------+-----------------+ 
+| NULL | NULL | 
++-----------------+-----------------+ 
+1 row in set (0.00 sec)
+```
 
-回避特殊符号的：使用转义符。例如：将[%]转为[$%]、[]转为[$]，然后再加上[ESCAPE‘$’]即可。
+
+
+### ESCAPE
+
+- 回避特殊符号的：使用转义符
+
 
 ```mysql
 SELECT job_id
 FROM jobs
-WHERE job_id LIKE ‘IT\_%‘;
+WHERE job_id LIKE 'IT\_%';
 ```
 
-如果使用\表示转义，要省略ESCAPE。如果不是\，则要加上ESCAPE。
+- 如果使用\表示转义，要省略ESCAPE。如果不是\，则要加上ESCAPE。
+
 
 ```mysql
 SELECT job_id
 FROM jobs
-WHERE job_id LIKE ‘IT$_%‘ escape ‘$‘;
+WHERE job_id LIKE 'IT$_%' escape '$';
 ```
 
-### 12) REGEXP运算符
 
-REGEXP运算符用来匹配字符串，语法格式为： expr REGEXP 匹配条件 。
 
-> （1）‘^’匹配以该字符后面的字符开头的字符串。 
+### REGEXP运算符
+
+- REGEXP运算符用来匹配字符串，语法格式为： expr REGEXP 匹配条件 
+- 如果expr满足匹配条件，返回 1；如果不满足，则返回0
+- 若expr或匹配条件任意一个为NULL，则结果为NULL
+
+- REGEXP运算符在进行匹配时，常用的有下面几种通配符：
+
+
+> ‘^’匹配以该字符后面的字符开头的字符串。 
+
+> ‘$’匹配以该字符前面的字符结尾的字符串
 >
-> （2）‘$’匹配以该字符前面的字符结尾的字符串。 
->
-> （3）‘.’匹配任何一个单字符。 
->
-> （4）“[...]”匹配在方括号内的任何字符。例如，“[abc]”匹配“a”或“b”或“c”。为了命名字符的范围，使用一 个‘-’。“[a-z]”匹配任何字母，而“[0-9]”匹配任何数字。
->
-> （5）‘*’匹配零个或多个在它前面的字符。例如，“x*”匹配任何数量的‘x’字符，“[0-9]*”匹配任何数量的数字， 而“*”匹配任何数量的任何字符。
 
-## 3. 逻辑运算符
+> ‘.’匹配任何一个单字符
 
-逻辑运算符主要用来判断表达式的真假，在MySQL中，逻辑运算符的返回结果为1、0或者NULL。 
+> “[...]”匹配在方括号内的任何字符
+>
+> 例如，“[abc]”匹配“a”或“b”或“c”
+>
+> 为了命名字符的范围，使用一 个‘-’
+>
+> “[a-z]”匹配任何字母，而“[0-9]”匹配任何数字
 
-MySQL中支持4种逻辑运算符如下：
+> ‘*’匹配零个或多个在它前面的字符
+>
+> 例如，“x”匹配任何数量的‘x’字符，“[0-9]”匹配任何数量的数字， 而“*”匹配任何数量的任何字符。
+
+```mysql
+mysql> SELECT 'shkstart' REGEXP '^s', 'shkstart' REGEXP 't$', 'shkstart' REGEXP 'hk'; 
++------------------------+------------------------+-------------------------+ 
+| 'shkstart' REGEXP '^s' | 'shkstart' REGEXP 't$' | 'shkstart' REGEXP 'hk' | 
++------------------------+------------------------+-------------------------+ 
+| 1 | 1 | 1 | 
++------------------------+------------------------+-------------------------+ 
+1 row in set (0.01 sec)
+```
+
+
+
+
+
+## 逻辑运算符
+
+- 逻辑运算符主要用来判断表达式的真假，在MySQL中，逻辑运算符的返回结果为1、0或者NULL
+
+
+- MySQL中支持4种逻辑运算符如下：
+
 
 ![](MySQL基础篇_img/逻辑运算符.png)
 
-## 4. 位运算
 
-位运算符是在二进制数上进行计算的运算符。位运算符会先将操作数变成二进制数，然后进行位运算， 最后将计算结果从二进制变回十进制数。 
 
-MySQL支持的位运算符如下：
+### 逻辑非运算符
+
+- 逻辑非（NOT或!）运算符表示当给定的值为0时返回1；当给定的值为非0值时返回0；
+- 当给定的值为NULL时，返回NULL
+
+```mysql
+mysql> SELECT NOT 1, NOT 0, NOT(1+1), NOT !1, NOT NULL; 
++-------+-------+----------+--------+----------+
+| NOT 1 | NOT 0 | NOT(1+1) | NOT !1 | NOT NULL | 
++-------+-------+----------+--------+----------+
+| 0 | 1 | 0 | 1 | NULL | 
++-------+-------+----------+--------+----------+
+1 row in set, 1 warning (0.00 sec)
+```
+
+
+
+### 逻辑与运算符
+
+- 逻辑与（AND 或 &&）运算符是当给定的所有值均为非0值，并且都不为NULL时，返回 1；
+- 当给定的一个值或者多个值为0时则返回0；否则返回NULL
+
+```mysql
+mysql> SELECT 1 AND -1, 0 AND 1, 0 AND NULL, 1 AND NULL; 
++----------+---------+------------+------------+
+| 1 AND -1 | 0 AND 1 | 0 AND NULL | 1 AND NULL | 
++----------+---------+------------+------------+
+| 1 | 0 | 0 | NULL | 
++----------+---------+------------+------------+
+1 row in set (0.00 sec)
+```
+
+```mysql
+SELECT employee_id, last_name, job_id, salary 
+FROM employees
+WHERE salary >=10000
+AND job_id LIKE '%MAN%';
+```
+
+
+
+### 逻辑或运算符
+
+- 逻辑或（OR 或 ||）运算符是当给定的值都不为NULL，并且任何一个值为非0值时，则返回1，否则返回0；
+- 当一个值为NULL，并且另一个值为非0值时，返回1，否则返回NULL；
+- 当两个值都为NULL时，返回NULL
+
+```mysql
+mysql> SELECT 1 OR -1, 1 OR 0, 1 OR NULL, 0 || NULL, NULL || NULL; 
++---------+--------+-----------+-----------+--------------+
+| 1 OR -1 | 1 OR 0 | 1 OR NULL | 0 || NULL | NULL || NULL | 
++---------+--------+-----------+-----------+--------------+
+| 1 | 1 | 1 | NULL | NULL | 
++---------+--------+-----------+-----------+--------------+
+1 row in set, 2 warnings (0.00 sec)
+```
+
+```mysql
+#查询基本薪资不在9000-12000之间的员工编号和基本薪资 
+SELECT employee_id,salary 
+FROM employees
+WHERE NOT (salary >= 9000 AND salary <= 12000);
+
+SELECT employee_id,salary 
+FROM employees
+WHERE salary < 9000 OR salary > 12000;
+
+SELECT employee_id,salary 
+FROM employees
+WHERE salary NOT BETWEEN 9000 AND 12000;
+```
+
+```mysql
+SELECT employee_id, last_name, job_id, salary 
+FROM employees
+WHERE salary >= 10000
+OR job_id LIKE '%MAN%';
+```
+
+> OR 可以和 AND 一起使用，但是在使用时要注意两者的优先级，由于 AND 的优先级高于 OR ，因此先对 AND 两边的操作数进行操作，再与 OR 中的操作数结合
+
+
+
+### 逻辑异或运算符
+
+- 逻辑异或（ XOR ）运算符是当给定的值中任意一个值为NULL时，则返回NULL；
+- 如果两个非NULL的值都是0或者都不等于0时，则返回0；
+- 如果一个值为0，另一个值不为0时，则返回1
+
+```mysql
+mysql> SELECT 1 XOR -1, 1 XOR 0, 0 XOR 0, 1 XOR NULL, 1 XOR 1 XOR 1, 0 XOR 0 XOR 0; 
++----------+---------+---------+------------+---------------+---------------+
+| 1 XOR -1 | 1 XOR 0 | 0 XOR 0 | 1 XOR NULL | 1 XOR 1 XOR 1 | 0 XOR 0 XOR 0 | 
++----------+---------+---------+------------+---------------+---------------+
+| 0 | 1 | 0 | NULL | 1 | 0 | 
++----------+---------+---------+------------+---------------+---------------+
+1 row in set (0.00 sec)
+```
+
+```mysql
+select last_name,department_id,salary
+from employees
+where department_id in (10,20) XOR salary > 8000;
+```
+
+
+
+##  位运算
+
+- 位运算符是在二进制数上进行计算的运算符
+- 位运算符会先将操作数变成二进制数，然后进行位运算， 最后将计算结果从二进制变回十进制数。
+
+- MySQL支持的位运算符如下：
+
 
 ![](MySQL基础篇_img/位运算符.png)
 
-## 5. 运算符的优先级
+### 按位与运算符
 
-数字编号越大，优先级越高，优先级高的运算符先进行计算。
+- 按位与（&）运算符将给定值对应的二进制数逐位进行逻辑与运算
+- 当给定值对应的二进制位的数值都为1时，则该位返回1，否则返回0。
+
+```mysql
+mysql> SELECT 1 & 10, 20 & 30; 
++--------+---------+ 
+| 1 & 10 | 20 & 30 | 
++--------+---------+ 
+| 0 | 20 | 
++--------+---------+ 
+1 row in set (0.00 sec)
+```
+
+
+
+### 按位或运算符
+
+- 按位或（|）运算符将给定的值对应的二进制数逐位进行逻辑或运算
+- 当给定值对应的二进制位的数值有一个或两个为1时，则该位返回1，否则返回0
+
+```mysql
+mysql> SELECT 1 | 10, 20 | 30; 
++--------+---------+ 
+| 1 | 10 | 20 | 30 | 
++--------+---------+ 
+| 11 | 30 | 
++--------+---------+ 
+1 row in set (0.00 sec)
+```
+
+
+
+### 按位异或运算符 
+
+- 按位异或（^）运算符将给定的值对应的二进制数逐位进行逻辑异或运算
+- 当给定值对应的二进制位的数值不同时，则该位返回1，否则返回0
+
+```mysql
+mysql> SELECT 1 ^ 10, 20 ^ 30; 
++--------+---------+ 
+| 1 ^ 10 | 20 ^ 30 | 
++--------+---------+ 
+| 11 | 10 | 
++--------+---------+ 
+1 row in set (0.00 sec)
+```
+
+
+
+### 按位取反运算符
+
+-  按位取反（~）运算符将给定的值的二进制数逐位进行取反操作，即将1变为0，将0变为1
+
+```mysql
+mysql> SELECT 10 & ~1; 
++---------+ 
+| 10 & ~1 | 
++---------+ 
+| 10 | 
++---------+ 
+1 row in set (0.00 sec)
+```
+
+> 由于按位取反（~）运算符的优先级高于按位与（&）运算符的优先级，所以10 & ~1，首先，对数字1进 行按位取反操作，结果除了最低位为0，其他位都为1，然后与10进行按位与操作，结果为10
+
+
+
+### 按位右移运算符 
+
+- 按位右移（>>）运算符将给定的值的二进制数的所有位右移指定的位数
+- 右移指定的位数后，右边低位的数值被移出并丢弃，左边高位空出的位置用0补齐
+
+```mysql
+mysql> SELECT 1 >> 2, 4 >> 2; 
++--------+--------+ 
+| 1 >> 2 | 4 >> 2 | 
++--------+--------+ 
+| 0 | 1 | 
++--------+--------+ 
+1 row in set (0.00 sec)
+```
+
+
+
+### 按位左移运算符 
+
+- 按位左移（<<）运算符将给定的值的二进制数的所有位左移指定的位数
+- 左移指定的位数后，左边高位的数值被移出并丢弃，右边低位空出的位置用0补齐
+
+```mysql
+mysql> SELECT 1 << 2, 4 << 2; 
++--------+--------+ 
+| 1 << 2 | 4 << 2 | 
++--------+--------+ 
+| 4 | 16 | 
++--------+--------+ 
+1 row in set (0.00 sec)
+```
+
+
+
+## 运算符的优先级
+
+- 数字编号越大，优先级越高，优先级高的运算符先进行计算
+
 
 ![](MySQL基础篇_img/运算符优先级.png)
 
@@ -429,21 +1023,25 @@ MySQL支持的位运算符如下：
 
 ![](MySQL基础篇_img/正则表达式.png)
 
-
+> LIKE运算符也可以匹配指定的字符串，但与REGEXP不同，LIKE匹配的字符串如果在文本中间出现，则找不到它，相应的行也不会返回
+>
+> REGEXP在文本内进行匹配，如果被匹配的字符串在文本中出现，REGEXP将会找到它，相应的行也会被返回
 
 
 
 # 排序与分页
 
-## 1. 排序规则
+## 排序规则
 
 * 使用 ORDER BY 子句排序
   * ASC（ascend）: 升序 
   * DESC（descend）:降序
 
-*   ORDER BY 子句在SELECT语句的结尾。
+*   ORDER BY 子句在SELECT语句的结尾
 
-### 1) 单列排序
+
+
+### 单列排序
 
 ```mysql
 SELECT last_name, job_id, department_id, hire_date
@@ -451,22 +1049,34 @@ FROM employees
 ORDER BY hire_date;
 ```
 
-### 2) 多列排序
-
-* 可以使用不在SELECT列表中的列排序。 
-* 在对多列进行排序的时候，首先排序的第一列必须有相同的列值，才会对第二列进行排序。如果第 一列数据中所有值都是唯一的，将不再对第二列进行排序。
-
-
-
-## 2. 分页
-
-* 格式：
+### 多列排序
 
 ```mysql
-LIMIT [位置偏移量,] 行数
+SELECT last_name, department_id, salary 
+FROM employees 
+ORDER BY department_id, salary DESC;
 ```
 
-* 举例：
+* 可以使用不在SELECT列表中的列排序
+* 在对多列进行排序的时候，首先排序的第一列必须有相同的列值，才会对第二列进行排序。如果第 一列数据中所有值都是唯一的，将不再对第二列进行排序
+
+
+
+## 分页
+
+- 所谓分页，就是将数据库中的结果集一段一段显示出来需要的条件
+
+* 格式
+
+```mysql
+LIMIT [位置偏移量,行数]
+```
+
+> 第一个“位置偏移量”参数指示MySQL从哪一行开始显示，是一个可选参数，如果不指定“位置偏移量”，将会从表中的第一条记录开始（第一条记录的位置偏移量是0，第二条记录的位置偏移量是 1，以此类推）；
+>
+> 第二个参数“行数”指示返回的记录条数
+
+* 举例
 
 ```mysql
 --前10条记录：
@@ -492,7 +1102,11 @@ LIMIT(PageNo - 1) * PageSize, PageSize;
 
 * 使用LIMIT的好处
 
-约束返回结果的数量可以 减少数据表的网络传输量 ，也可以 提升查询效率 。如果我们知道返回结果只有 1 条，就可以使用 LIMIT 1 ，告诉 SELECT 语句只需要返回一条记录即可。这样的好处就是 SELECT 不需 要扫描完整的表，只需要检索到一条符合条件的记录即可返回。
+> 约束返回结果的数量可以减少数据表的网络传输量 ，也可以提升查询效率 
+>
+> 如果我们知道返回结果只有 1 条，就可以使用 LIMIT 1 ，告诉 SELECT 语句只需要返回一条记录即可
+>
+> 这样的好处就是 SELECT 不需要扫描完整的表，只需要检索到一条符合条件的记录即可返回
 
 
 
@@ -500,11 +1114,65 @@ LIMIT(PageNo - 1) * PageSize, PageSize;
 
 # 多表查询
 
-## 1. 多表查询分类讲解
+- 多表查询，也称为关联查询，指两个或更多个表一起完成查询操作
+- 前提条件
+  - 这些一起查询的表之间是有关系的（一对一、一对多），它们之间一定是有关联字段，这个关联字段可能建立了外键，也有可能没有建立外键
+- SQL92中，笛卡尔积也称为交叉连接，英文是$CROSS JOIN $。在SQL99中也是使用$CROSS JOIN $表示交叉连接。它的作用就是可以把任意表进行连接，即使这两张表不相关
 
-### 1) 自连接
 
-题目：查询employees表，返回 <员工 works for 老板>
+
+## 笛卡尔积
+
+- 笛卡尔积的错误会在下面条件下产生：
+
+  - 省略多个表的连接条件（或关联条件）
+
+  - 连接条件（或关联条件）无效
+
+  - 所有表中的所有行互相连接
+
+- 为了避免笛卡尔积，可以在WHERE加入有效的连接条件
+
+```mysql
+SELECT FROM WHERE
+table1.column, table2.column table1, table2 table1.column1 = table2.column2;#连接条件
+```
+
+```mysql
+#案例：查询员工的姓名及其部门名称 
+SELECT last_name, department_name 
+FROM employees, departments 
+WHERE employees.department_id = departments.department_id;
+```
+
+> 在表中有相同列时，在列名之前加上表名前缀
+
+> 在不同表中具有相同列名可以使用表明加以区分
+
+> 在查找的时候建议都加入前缀，提高查询效率
+
+
+
+```mysql
+SELECT e.employee_id, e.last_name, e.department_id, d.department_id, d.location_id 
+FROM employees e , departments d 
+WHERE e.department_id = d.department_id;
+```
+
+> 使用别名可以简化查询
+>
+> 列名前使用表名前缀可以提高查询效率
+
+> 如果我们使用了表的别名，在查询字段中，过滤条件中就只能使用别名进行代替，不能使用原有的表明，否则就会报错
+
+
+
+## 多表查询分类讲解
+
+### 自连接
+
+- 题目
+  - 查询employees表，返回 <员工 works for 老板>
 
 ```mysql
 SELECT CONCAT(worker.last_name , ' works for ', manager.last_name)
@@ -512,9 +1180,11 @@ FROM employees worker, employees manager
 WHERE worker.manager_id = manager.employee_id;
 ```
 
-### 2) 内连接与外连接
+### 内连接与外连接
 
-* 内连接: 合并具有同一列的两个以上的表的行, 结果集中不包含一个表与另一个表不匹配的行 
+#### 内连接
+
+*  合并具有同一列的两个以上的表的行, 结果集中不包含一个表与另一个表不匹配的行 
 
 **SQL92语法**
 
@@ -528,12 +1198,61 @@ WHERE emp.`department_id` = dep.`department_id`;
 
 ```mysql
 SELECT emp.employee_id, dep.department_name
-FROM employee emp JOIN department dep
+FROM employee emp 
+JOIN department dep
 ON emp.`department_id` = dep.`department_id`;
 ```
 
-* 外连接: 两个表在连接过程中除了返回满足连接条件的行以外还返回左（或右）表中不满足条件的 行 ，这种连接称为左（或右） 外连接。没有匹配的行时, 结果表中相应的列为空(NULL)。 
-* 如果是左外连接，则连接条件中左边的表也称为 主表 ，右边的表称为 从表 。 
+```mysql
+SELECT employee_id, city, department_name 
+FROM employees e 
+JOIN departments d 
+ON d.department_id = e.department_id 
+JOIN locations l 
+ON d.location_id = l.location_id;
+```
+
+> JOIN 、INNER JOIN 、CROSS JOIN 的含义是一样的，都表示内连接
+
+
+
+#### 外连接
+
+* 两个表在连接过程中除了返回满足连接条件的行以外还返回左（或右）表中不满足条件的行 ，这种连接称为左（或右）外连接。没有匹配的行时, 结果表中相应的列为空(NULL)
+* 如果是左外连接，则连接条件中左边的表也称为主表 ，右边的表称为从表 
+* 如果是右外连接，则连接条件中右边的表也称为主表 ，左边的表称为从表
+
+##### SQL92 : 使用（+）创建连接
+
+- 在 SQL92 中采用（+）代表从表所在的位置。即左或右外连接中，(+) 表示哪个是从表
+- Oracle 对 SQL92 支持较好，而 MySQL 则不支持 SQL92 的外连接
+
+```mysql
+#左外连接 
+SELECT last_name,department_name 
+FROM employees ,departments 
+WHERE employees.department_id = departments.department_id(+);
+
+#右外连接 
+SELECT last_name,department_name 
+FROM employees ,departments 
+WHERE employees.department_id(+) = departments.department_id;
+```
+
+
+
+##### SQL99语法实现多表查询
+
+- 基本用法
+
+  - ```mysql
+    #实现查询结果是A 
+    SELECT 字段列表 
+    FROM A表 
+    LEFT / RIGHT  JOIN B表 
+    ON 关联条件 
+    WHERE 等其他子句;
+    ```
 
 **LEFT OUTER JOIN**
 
@@ -543,7 +1262,7 @@ FROM employees emp LEFT OUTER JOIN department dep
 ON emp.`department_id` = dep.`department_id`;
 ```
 
-* 如果是右外连接，则连接条件中右边的表也称为 主表 ，左边的表称为 从表 。
+* 如果是右外连接，则连接条件中右边的表也称为主表 ，左边的表称为从表 
 
 **RIGHT OUTER JOIN**
 
@@ -553,15 +1272,27 @@ FROM employees emp RIGHT OUTER JOIN department dep
 ON emp.`department_id` = dep.`department_id`;
 ```
 
+**FULL OUTER JOIN **
+
+- 满外连接的结果 = 左右表匹配的数据 + 左表没有匹配到的数据 + 右表没有匹配到的数据
+- SQL99是支持满外连接的。使用FULL JOIN 或 FULL OUTER JOIN来实现
+
+- 需要注意的是，MySQL不支持FULL JOIN，但是可以用 LEFT JOIN UNION RIGHT JOIN 代替
 
 
-## 2. UNION的使用
 
-**合并查询结果** 
 
-利用UNION关键字，可以给出多条SELECT语句，并将它们的结果组合成单个结果集。合并 时，两个表对应的列数和数据类型必须相同，并且相互对应。各个SELECT语句之间使用UNION或UNION ALL关键字分隔。
 
-语法格式：
+## UNION的使用
+
+### 合并查询结果
+
+- 利用UNION关键字，可以给出多条SELECT语句，并将它们的结果组合成单个结果集
+- 合并时，两个表对应的列数和数据类型必须相同，并且相互对应
+- 各个SELECT语句之间使用UNION或UNION ALL关键字分隔
+
+- 语法格式：
+
 
 ```mysql
 SELECT column,... FROM table1
@@ -569,41 +1300,59 @@ UNION [ALL]
 SELECT column,... FROM table2
 ```
 
-**UNION操作符**
+### UNION操作符
 
-UNION 操作符返回两个查询的结果集的并集，去除重复记录。
+- UNION 操作符返回两个查询的结果集的并集，去除重复记录
 
-**UNION ALL操作符**
+![](MySQL基础篇_img/UNION.jpg)
 
-UNION ALL操作符返回两个查询的结果集的并集。对于两个结果集的重复部分，不去重。
 
-> 注意：执行UNION ALL语句时所需要的资源比UNION语句少。如果明确知道合并数据后的结果数据不存在重复数据，或者不需要去除重复的数据，则尽量使用UNION ALL语句，以提高数据查询的效率。
 
-举例：查询部门编号>90或邮箱包含a的员工信息
+### UNION ALL操作符
+
+- UNION ALL操作符返回两个查询的结果集的并集。对于两个结果集的重复部分，不去重
+
+![](MySQL基础篇_img/UNION ALL.jpg)
+
+> 注意：执行UNION ALL语句时所需要的资源比UNION语句少。
+>
+> 如果明确知道合并数据后的结果数据不存在重复数据，或者不需要去除重复的数据，则尽量使用UNION ALL语句，以提高数据查询的效率。
+
+- 举例：查询部门编号>90或邮箱包含a的员工信息
+
 
 ```mysql
 #方式1
-SELECT * FROM employees WHERE email LIKE '%a%' OR department_id>90;
+SELECT * 
+FROM employees 
+WHERE email LIKE '%a%' OR department_id>90;
 ```
 
 ```mysql
 #方式2
-SELECT * FROM employees WHERE email LIKE '%a%'
+SELECT * 
+FROM employees 
+WHERE email LIKE '%a%'
 UNION
 SELECT * FROM employees WHERE department_id>90;
 ```
 
-举例：查询中国用户中男性的信息以及美国用户中年男性的用户信息
+- 举例：查询中国用户中男性的信息以及美国用户中年男性的用户信息
+
 
 ```mysql
-SELECT id,cname FROM t_chinamale WHERE csex='男'
+SELECT id,cname 
+FROM t_chinamale 
+WHERE csex='男'
 UNION ALL
-SELECT id,tname FROM t_usmale WHERE tGender='male';
+SELECT id,tname 
+FROM t_usmale 
+WHERE tGender='male';
 ```
 
 
 
-## 3.七种SQL JOINS的实现
+## 七种SQL JOINS的实现
 
 ![](MySQL基础篇_img/JOINS.png)
 
@@ -674,13 +1423,15 @@ WHERE e.`department_id` IS NULL;
 
 
 
-## 4. SQL99语法的新特性
+##  SQL99语法的新特性
 
-### 1) 自然连接
+### 自然连接
 
-SQL99 在 SQL92 的基础上提供了一些特殊语法，比如 NATURAL JOIN 用来表示自然连接。我们可以把 自然连接理解为 SQL92 中的等值连接。它会帮你自动查询两张连接表中 所有相同的字段 ，然后进行 等值 连接 。
+- `SQL99` 在 `SQL92` 的基础上提供了一些特殊语法，比如 `NATURAL JOIN` 用来表示自然连接。我们可以把 自然连接理解为` SQL92 `中的等值连接。它会帮你自动查询两张连接表中所有相同的字段 ，然后进行等值连接 。
 
-在SQL92标准中：
+
+- 在`SQL92`标准中：
+
 
 ```mysql
 SELECT employee_id,last_name,department_name
@@ -689,16 +1440,18 @@ ON e.`department_id` = d.`department_id`
 AND e.`manager_id` = d.`manager_id`;
 ```
 
-在 SQL99 中你可以写成：
+- 在 `SQL99` 中你可以写成：
+
 
 ```mysql
 SELECT employee_id,last_name,department_name
 FROM employees e NATURAL JOIN departments d;
 ```
 
-### 2) USING连接
+### USING连接
 
-当我们进行连接的时候，SQL99还支持使用 USING 指定数据表里的 同名字段 进行等值连接。但是只能配 合JOIN一起使用。比如：
+- 当我们进行连接的时候，`SQL99`还支持使用` USING` 指定数据表里的同名字段进行等值连接。但是只能配合`JOIN`一起使用。比如：
+
 
 ```mysql
 SELECT employee_id,last_name,department_name
@@ -706,7 +1459,8 @@ FROM employees e JOIN departments d
 USING (department_id);
 ```
 
-你能看出与自然连接 NATURAL JOIN 不同的是，USING 指定了具体的相同的字段名称，你需要在 USING 的括号 () 中填入要指定的同名字段。同时使用 JOIN...USING 可以简化 JOIN ON 的等值连接。它与下 面的 SQL 查询结果是相同的：
+- 你能看出与自然连接 NATURAL JOIN 不同的是，USING 指定了具体的相同的字段名称，你需要在 USING 的括号 () 中填入要指定的同名字段。同时使用 JOIN...USING 可以简化 JOIN ON 的等值连接。它与下 面的 SQL 查询结果是相同的：
+
 
 ```mysql
 SELECT employee_id,last_name,department_name
@@ -716,27 +1470,28 @@ WHERE e.department_id = d.department_id;
 
 
 
+## 小结
+
+- 表连接的约束条件可以有三种方式：`WHERE, ON, USING `
+
+  * WHERE：适用于所有关联查询 
+
+  * ON ：只能和JOIN一起使用，只能写关联条件。虽然关联条件可以并到WHERE中和其他条件一起 写，但分开写可读性更好
+
+  * USING：只能和JOIN一起使用，而且要求两个关联字段在关联表中名称一致，而且只能表示关联字段值相等
 
 
+> 我们要控制连接表的数量 
 
 
-## 5. 小结
+> 多表连接就相当于嵌套 for 循环一样，非常消耗资源，会让 SQL 查询性能下 降得很严重，因此不要连接不必要的表
 
-表连接的约束条件可以有三种方式：WHERE, ON, USING 
 
-* WHERE：适用于所有关联查询 
-* ON ：只能和JOIN一起使用，只能写关联条件。虽然关联条件可以并到WHERE中和其他条件一起 写，但分开写可读性更好。 
-* USING：只能和JOIN一起使用，而且要求两个关联字段在关联表中名称一致，而且只能表示关联字 段值相等
-
-> 我们要控制连接表的数量 。
->
-> 多表连接就相当于嵌套 for 循环一样，非常消耗资源，会让 SQL 查询性能下 降得很严重，因此不要连接不必要的表。
->
-> 在许多 DBMS 中，也都会有最大连接表的限制。
+> 在许多 DBMS 中，也都会有最大连接表的限制
 
 ```mysql
 # 习题巩固
-# 注意：当两个表外连接之后，组成主表和从表，主表的连接字段是不为空的，从表的连接字段可能为空，因此从表的关键字段用来判断是否为空。
+# 注意：当两个表外连接之后，组成主表和从表，主表的连接字段是不为空的，从表的连接字段可能为空，因此从表的关键字段用来判断是否为空
 
 # 1.查询哪些部门没有员工
 # 方式一
@@ -773,11 +1528,17 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 
 # 单行函数
 
+- 操作数据对象
+- 接收参数返回一个结果
+- 只对一行进行变换
+- 每行返回一个结果
+- 可以嵌套
+- 参数可以是一列或一个值
 
 
-## 1. 数值函数
+## 数值函数
 
-### 1) 基本函数
+### 基本函数
 
 | 函数                | 用法                                                         |
 | ------------------- | ------------------------------------------------------------ |
@@ -796,14 +1557,14 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | TRUNCATE(x,y)       | 返回数字x截断为y位小数的结果                                 |
 | SQRT(x)             | 返回x的平方根。当X的值为负数时，返回NULL                     |
 
-### 2) 角度与弧度互换函数
+### 角度与弧度互换函数
 
 | 函数       | 用法                                  |
 | ---------- | ------------------------------------- |
 | RADIANS(x) | 将角度转化为弧度，其中，参数x为角度值 |
 | DEGREES(x) | 将弧度转化为角度，其中，参数x为弧度值 |
 
-### 3) 三角函数
+### 三角函数
 
 | 函数       | 用法                                                         |
 | ---------- | ------------------------------------------------------------ |
@@ -816,7 +1577,7 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | ATAN2(m,n) | 返回两个参数的反正切值                                       |
 | COT(x)     | 返回x的余切值，其中，X为弧度值                               |
 
-### 4) 指数与对数函数
+### 指数与对数函数
 
 | 函数                 | 用法                                                 |
 | -------------------- | ---------------------------------------------------- |
@@ -826,7 +1587,7 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | LOG10(X)             | 返回以10为底的X的对数，当X <= 0 时，返回的结果为NULL |
 | LOG2(X)              | 返回以2为底的X的对数，当X <= 0 时，返回NULL          |
 
-### 5) 进制间的转换
+### 进制间的转换
 
 | 函数          | 用法                     |
 | ------------- | ------------------------ |
@@ -839,7 +1600,7 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 
 
 
-## 2. 字符串函数
+## 字符串函数
 
 | 函数                              | 用法                                                         |
 | --------------------------------- | ------------------------------------------------------------ |
@@ -879,9 +1640,9 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 
 
 
-## 3. 日期和时间函数
+## 日期和时间函数
 
-### 1) 获取日期、时间
+### 获取日期、时间
 
 | 函数                                                         | 用法                            |
 | ------------------------------------------------------------ | ------------------------------- |
@@ -891,7 +1652,7 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | UTC_DATE()                                                   | 返回UTC（世界标准时间） 日期    |
 | UTC_TIME()                                                   | 返回UTC（世界标准时间） 时间    |
 
-### 2) 日期与时间戳的转换
+### 日期与时间戳的转换
 
 | 函数                     | 用法                                                         |
 | ------------------------ | ------------------------------------------------------------ |
@@ -899,7 +1660,7 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | UNIX_TIMESTAMP(date)     | 将时间date以UNIX时间戳的形式返回。                           |
 | FROM_UNIXTIME(timestamp) | 将UNIX时间戳的时间转换为普通格式的时间                       |
 
-### 3) 获取月份、星期、星期数、天数等函数
+### 获取月份、星期、星期数、天数等函数
 
 | 函数                                     | 用法                                             |
 | ---------------------------------------- | ------------------------------------------------ |
@@ -915,31 +1676,33 @@ WHERE d.`department_name` IN ('Sales', 'IT');
 | DAYOFMONTH(date)                         | 返回日期位于所在月份的第几天                     |
 | DAYOFWEEK(date)                          | 返回周几，注意：周日是1，周一是2，。。。周六是 7 |
 
-### 4) 日期的操作函数
+### 日期的操作函数
 
 | 函数                    | 用法                                       |
 | ----------------------- | ------------------------------------------ |
 | EXTRACT(type FROM date) | 返回指定日期中特定的部分，type指定返回的值 |
 
-EXTRACT(type FROM date)函数中type的取值与含义：
+- EXTRACT(type FROM date)函数中type的取值与含义：
+
 
 ![](MySQL基础篇_img/type取值.png)
 
-### 5) 时间和秒钟转换的函数
+###  时间和秒钟转换的函数
 
 | 函数                 | 用法                                                         |
 | -------------------- | ------------------------------------------------------------ |
 | TIME_TO_SEC(time)    | 将 time 转化为秒并返回结果值。转化的公式为： 小时*3600+分钟 *60+秒 |
 | SEC_TO_TIME(seconds) | 将 seconds 描述转化为包含小时、分钟和秒的时间                |
 
-### 6) 计算日期和时间的函数
+### 计算日期和时间的函数
 
 | 函数                                                         | 用法                                           |
 | ------------------------------------------------------------ | ---------------------------------------------- |
 | DATE_ADD(datetime, INTERVAL expr type)， ADDDATE(date,INTERVAL expr type) | 返回与给定日期时间相差INTERVAL时间段的日期时间 |
 | DATE_SUB(date,INTERVAL expr type)， SUBDATE(date,INTERVAL expr type) | 返回与date相差INTERVAL时间间隔的日期           |
 
-上述函数中type的取值：
+- 上述函数中type的取值：
+
 
 ![](MySQL基础篇_img/间隔类型.png)
 
@@ -956,7 +1719,7 @@ EXTRACT(type FROM date)函数中type的取值与含义：
 | MAKETIME(hour,minute,second) | 将给定的小时、分钟和秒组合成时间并返回                       |
 | PERIOD_ADD(time,n)           | 返回time加上n后的时间                                        |
 
-### 7)  日期的格式化与解析
+###  日期的格式化与解析
 
 | 函数                              | 用法                                       |
 | --------------------------------- | ------------------------------------------ |
@@ -965,7 +1728,8 @@ EXTRACT(type FROM date)函数中type的取值与含义：
 | GET_FORMAT(date_type,format_type) | 返回日期字符串的显示格式                   |
 | STR_TO_DATE(str, fmt)             | 按照字符串fmt对str进行解析，解析为一个日期 |
 
-上述 非GET_FORMAT 函数中fmt参数常用的格式符：
+- 上述 非GET_FORMAT 函数中fmt参数常用的格式符：
+
 
 | 格式符 | 说明                                                         | 格式符  | 说明                                                         |
 | ------ | ------------------------------------------------------------ | ------- | ------------------------------------------------------------ |
@@ -984,13 +1748,16 @@ EXTRACT(type FROM date)函数中type的取值与含义：
 | %T     | 24小时制                                                     | %r      | 12小时制                                                     |
 | %p     | AM或PM                                                       | %%      | 表示%                                                        |
 
+- GET_FORMAT函数中date_type和format_type参数取值如下：
+
+![](MySQL基础篇_img/GET_FORMAT.jpg)
 
 
 
+## 流程控制函数
 
-## 4. 流程控制函数
+- 流程处理函数可以根据不同的条件，执行不同的处理流程，可以在`SQL`语句中实现不同的条件选择。 `MySQL`中的流程处理函数主要包括`IF()`、`IFNULL()`和`CASE()`函数
 
-流程处理函数可以根据不同的条件，执行不同的处理流程，可以在SQL语句中实现不同的条件选择。 MySQL中的流程处理函数主要包括IF()、IFNULL()和CASE()函数。
 
 | 函数                                                         | 用法                                             |
 | ------------------------------------------------------------ | ------------------------------------------------ |
@@ -999,29 +1766,46 @@ EXTRACT(type FROM date)函数中type的取值与含义：
 | CASE WHEN 条件1 THEN 结果1 WHEN 条件2 THEN 结果2 .... [ELSE resultn] END | 相当于Java的if...else if...else...               |
 | CASE expr WHEN 常量值1 THEN 值1 WHEN 常量值1 THEN 值1 .... [ELSE 值n] END | 相当于Java的switch...case...                     |
 
+```mysql
+SELECT last_name, job_id, salary, 
+	CASE job_id WHEN 'IT_PROG' THEN 1.10*salary
+				WHEN 'ST_CLERK' THEN 1.15*salary
+				WHEN 'SA_REP' THEN 1.20*salary 
+				ELSE salary END "REVISED_SALARY"
+FROM employees;
+```
+
+> `MySQL`自带循环
 
 
 
 
-## 5. 加密与解密函数
 
-加密与解密函数主要用于对数据库中的数据进行加密和解密处理，以防止数据被他人窃取。这些函数在保证数据库安全时非常有用。
+## 加密与解密函数
+
+- 加密与解密函数主要用于对数据库中的数据进行加密和解密处理，以防止数据被他人窃取。这些函数在保证数据库安全时非常有用
+
 
 | 函数                        | 用法                                                         |
 | --------------------------- | ------------------------------------------------------------ |
 | PASSWORD(str)               | 返回字符串str的加密版本，41位长的字符串。加密结果不可逆 ，常用于用户的密码加密 |
 | MD5(str)                    | 返回字符串str的md5加密后的值，也是一种加密方式。若参数为 NULL，则会返回NULL |
-| SHA(str)                    | 从原明文密码str计算并返回加密后的密码字符串，当参数为 NULL时，返回NULL。 SHA加密算法比MD5更加安全 。 |
+| SHA(str)                    | 从原明文密码str计算并返回加密后的密码字符串，当参数为 NULL时，返回NULL。 SHA加密算法比MD5更加安全 |
 | ENCODE(value,password_seed) | 返回使用password_seed作为加密密码加密value                   |
 | DECODE(value,password_seed) | 返回使用password_seed作为加密密码解密value                   |
 
+> MD5 和 SHA 是不可逆的，不能从暗文转换为明文
+
+> ENCODE 和 DECODE 在MySQL 8中弃用
+
+> PASSWORD 在MySQL 8中被弃用
 
 
 
+## MySQL信息函数
 
-## 6. MySQL信息函数
+- MySQL中内置了一些可以查询MySQL信息的函数，这些函数主要用于帮助数据库开发或运维人员更好地 对数据库进行维护工作。
 
-MySQL中内置了一些可以查询MySQL信息的函数，这些函数主要用于帮助数据库开发或运维人员更好地 对数据库进行维护工作。
 
 | 函数                                                   | 用法                                                      |
 | ------------------------------------------------------ | --------------------------------------------------------- |
@@ -1032,16 +1816,61 @@ MySQL中内置了一些可以查询MySQL信息的函数，这些函数主要用�
 | CHARSET(value)                                         | 返回字符串value自变量的字符集                             |
 | COLLATION(value)                                       | 返回字符串value的比较规则                                 |
 
-MySQL中有些函数无法对其进行具体的分类，但是这些函数在MySQL的开发和运维过程中也是不容忽视 的。
+
+
+## 其他函数
 
 | 函数                           | 用法                                                         |
 | ------------------------------ | ------------------------------------------------------------ |
-| FORMAT(value,n)                | 返回对数字value进行格式化后的结果数据。n表示 四舍五入 后保留 到小数点后n位 |
+| FORMAT(value,n)                | 返回对数字value进行格式化后的结果数据。n表示 四舍五入后保留到小数点后n位。如果n的值小于或等于0，则只保留整数部分 |
 | CONV(value,from,to)            | 将value的值进行不同进制之间的转换                            |
 | INET_ATON(ipvalue)             | 将以点分隔的IP地址转化为一个数字                             |
 | INET_NTOA(value)               | 将数字形式的IP地址转化为以点分隔的IP地址                     |
 | BENCHMARK(n,expr)              | 将表达式expr重复执行n次。用于测试MySQL处理expr表达式所耗费 的时间 |
 | CONVERT(value USING char_code) | 将value所使用的字符编码修改为char_code                       |
+
+```mysql
+# 如果n的值小于或者等于0，则只保留整数部分 mysql> SELECT FORMAT(123.123, 2), FORMAT(123.523, 0), FORMAT(123.123, -2); 
++--------------------+--------------------+---------------------+ 
+| FORMAT(123.123, 2) | FORMAT(123.523, 0) | FORMAT(123.123, -2) | 
++--------------------+--------------------+---------------------+ 
+| 123.12 | 124 | 123 | 
++--------------------+--------------------+---------------------+ 
+1 row in set (0.00 sec)
+```
+
+```mysql
+mysql> SELECT INET_ATON('192.168.1.100'); 
++----------------------------+
+| INET_ATON('192.168.1.100') | 
++----------------------------+ 
+| 3232235876 | 
++----------------------------+ 
+1 row in set (0.00 sec)
+
+# 以“192.168.1.100”为例，计算方式为192乘以256的3次方，加上168乘以256的2次方，加上1乘以256，再加上 100。
+
+mysql> SELECT INET_NTOA(3232235876); 
++-----------------------+ 
+| INET_NTOA(3232235876) | 
++-----------------------+ 
+| 192.168.1.100 | 
++-----------------------+ 
+1 row in set (0.00 sec)
+```
+
+```mysql
+mysql> SELECT CHARSET('mysql'), CHARSET(CONVERT('mysql' USING 'utf8'));
++------------------+----------------------------------------+ 
+| CHARSET('mysql') | CHARSET(CONVERT('mysql' USING 'utf8')) | 
++------------------+----------------------------------------+ 
+| utf8mb4 | utf8 | 
++------------------+----------------------------------------+ 
+1 row in set, 1 warning (0.00 sec)
+# 实现字符集的转换
+```
+
+
 
 
 
@@ -1049,39 +1878,47 @@ MySQL中有些函数无法对其进行具体的分类，但是这些函数在MyS
 
 # 聚合函数
 
-## 1. 聚合函数介绍
+## 聚合函数介绍
 
 * 什么是聚合函数
+  - 聚合函数作用于一组数据，并对一组数据返回一个值
 
-聚合函数作用于一组数据，并对一组数据返回一个值。
 
 * 聚合函数类型
-  * AVG()
-  * SUM()
-  * MAX()
-  * MIN()
-  * COUNT()
+  * `AVG()`
+  * `SUM()`
+  * `MAX()`
+  * `MIN()`
+  * `COUNT()`
 
-### 1) AVG和SUM函数
+### AVG和SUM函数
 
 ```mysql
 SELECT AVG(salary), MAX(salary),MIN(salary), SUM(salary)
 FROM employees
 WHERE job_id LIKE '%REP%';
+
+#只适用于数值类型的字段（或变量）
 ```
 
-### 2) MIN和MAX函数
+### MIN和MAX函数
 
-可以对任意数据类型的数据使用 MIN 和 MAX 函数。
+- 可以对任意数据类型的数据使用 `MIN` 和` MAX` 函数
+
 
 ```mysql
 SELECT MIN(hire_date), MAX(hire_date)
 FROM employees;
 ```
 
-### 3) COUNT函数
+### COUNT函数
 
-COUNT(*)返回表中记录总数，适用于任意数据类型。
+#### 作用
+
+- 计算指定字段在查询结构中出现的个数
+
+- `COUNT(*)`返回表中记录总数，适用于任意数据类型
+  - 用来查看表中有多少记录
 
 ```mysql
 SELECT COUNT(*)
@@ -1089,7 +1926,7 @@ FROM employees
 WHERE department_id = 50;
 ```
 
-COUNT(expr) 返回expr不为空的记录总数。
+- `COUNT(expr)` 返回`expr`不为空的记录总数
 
 ```mysql
 SELECT COUNT(commission_pct)
@@ -1097,21 +1934,28 @@ FROM employees
 WHERE department_id = 50;
 ```
 
-* 问题：用count(*)，count(1)，count(列名)谁好呢?
+* 问题：用`count(*)`，`count(1)`，`count(列名)`（不计算空值）谁好呢?（用来计算表中有多少记录）(非空时)
 
-其实，对于MyISAM引擎的表是没有区别的。这种引擎内部有一计数器在维护着行数。 Innodb引擎的表用count(*),count(1)直接读行数，复杂度是O(n)，因为innodb真的要去数一遍。但好 于具体的count(列名)。
+```
+其实，对于MyISAM引擎的表是没有区别的。这种引擎内部有一计数器在维护着行数。 Innodb引擎的表用count(*),count(1)直接读行数，复杂度是O(n)，因为innodb真的要去数一遍。但好于具体的count(列名)
+```
 
 * 问题：能不能使用count(列名)替换count(*)?
 
-不要使用 count(列名)来替代 count(*) ， count(*) 是 SQL92 定义的标准统计行数的语法，跟数 据库无关，跟 NULL 和非 NULL 无关。 说明：count(*)会统计值为 NULL 的行，而 count(列名)不会统计此列为 NULL 值的行。
+```
+不要使用 count(列名)来替代 count(*) ， count(*) 是 SQL92 定义的标准统计行数的语法，跟数据库无关，跟 NULL 和非 NULL 无关。 说明：count(*)会统计值为 NULL 的行，而 count(列名)不会统计此列为 NULL 值的行
+```
+
+> `AVG =  SUM / COUNT`
 
 
 
-## 2. GROUP BY
+## GROUP BY
 
-### 1) 基本使用
+### 基本使用
 
-可以使用GROUP BY子句将表中的数据分成若干组
+- 可以使用`GROUP BY`子句将表中的数据分成若干组
+
 
 ```mysql
 SELECT column, group_function(column)
@@ -1121,13 +1965,15 @@ FROM table
 [ORDER BY column];
 ```
 
-> 结论1：SELECT中出现的非组函数的字段必须声明在GROUP BY中。
+> SELECT中出现的非组函数的字段必须声明在`GROUP BY`中
 >
-> ​			反之，GROUP BY中声明的字段可以不出现在SELECT中。
->
-> 结论2：GROUP BY声明在FROM后面、WHERE后面、ORDER BY前面、LIMIT前面。
+> 反之，`GROUP BY`中声明的字段可以不出现在`SELECT`中
 
-### 2) 使用WITH ROLLUP
+> `GROUP BY`声明在`FROM`后面、`WHERE`后面、`ORDER BY`前面、`LIMIT`前面
+
+### 使用WITH ROLLUP
+
+- 使用 `WITH ROLLUP `关键字之后，在所有查询出的分组记录之后增加一条记录，该记录计算查询出的所有记录的总和，即统计记录数量
 
 ```mysql
 SELECT department_id,AVG(salary)
@@ -1136,22 +1982,25 @@ WHERE department_id > 80
 GROUP BY department_id WITH ROLLUP;
 ```
 
-> 注意： 当使用ROLLUP时，不能同时使用ORDER BY子句进行结果排序，即ROLLUP和ORDER BY是互相排斥的。
+> 注意： 当使用`ROLLUP`时，不能同时使用`ORDER BY`子句进行结果排序，即`ROLLUP`和`ORDER BY`是互相排斥的。
 
 
 
   
 
-## 3. HAVING
+## HAVING
 
-### 1) 基本使用
+###  基本使用
 
-过滤分组：HAVING子句 
+- 过滤分组：`HAVING`子句 
 
-1. 行已经被分组。 
-2. 使用了聚合函数。 
-3. 满足HAVING 子句中条件的分组将被显示。 
-4. HAVING 不能单独使用，必须要跟 GROUP BY 一起使用。
+  - 行已经被分组
+
+  - 使用了聚合函数
+
+  - 满足`HAVING `子句中条件的分组将被显示
+
+  - `HAVING `不能单独使用，必须要跟 `GROUP BY` 一起使用
 
 ```mysql
 SELECT department_id, MAX(salary)
@@ -1160,58 +2009,80 @@ GROUP BY department_id
 HAVING MAX(salary)>10000 ;
 ```
 
-**要求**
+### **要求**
 
-+ 如果过滤条件中使用了聚合函数，则必须使用HAVING来替换WHERE。否则，报错。
-+ 当过滤条件中没有聚合函数时，则次过滤条件声明在WHERE中或HAVING中都可以。但是，建议声明在WHERE中的执行效率高。
-+ HAVING必须声明在GROUP BY 的后面
-+ 开发中，我们使用HAVING的前提是SQL中使用了GROUP BY。
++ 如果过滤条件中使用了聚合函数，则必须使用`HAVING`来替换`WHERE`。否则，报错
++ 当过滤条件中没有聚合函数时，则次过滤条件声明在`WHERE`中或`HAVING`中都可以。但是，建议声明在`WHERE`中的执行效率高
++ `HAVING`必须声明在`GROUP BY `的后面
++ 开发中，我们使用`HAVING`的前提是`SQL`中使用了`GROUP BY`
 
-### 2) WHERE和HAVING的对比
 
-**区别1：WHERE 可以直接使用表中的字段作为筛选条件，但不能使用分组中的计算函数作为筛选条件； HAVING 必须要与 GROUP BY 配合使用，可以把分组计算的函数和分组字段作为筛选条件。**
 
-​	这决定了，在需要对数据进行分组统计的时候，HAVING 可以完成 WHERE 不能完成的任务。这是因为， 在查询语法结构中，WHERE 在 GROUP BY 之前，所以无法对分组结果进行筛选。HAVING 在 GROUP BY 之 后，可以使用分组字段和分组中的计算函数，对分组的结果集进行筛选，这个功能是 WHERE 无法完成 的。另外，WHERE排除的记录不再包括在分组中。
+### WHERE和HAVING的对比
 
-**区别2：如果需要通过连接从关联表中获取需要的数据，WHERE 是先筛选后连接，而 HAVING 是先连接 后筛选。**
+**区别1：WHERE 可以直接使用表中的字段作为筛选条件，但不能使用分组中的计算函数作为筛选条件； HAVING 必须要与 GROUP BY 配合使用，可以把分组计算的函数和分组字段作为筛选条件**
 
-​	这一点，就决定了在关联查询中，WHERE 比 HAVING 更高效。因为 WHERE 可以先筛选，用一 个筛选后的较小数据集和关联表进行连接，这样占用的资源比较少，执行效率也比较高。HAVING 则需要 先把结果集准备好，也就是用未被筛选的数据集进行关联，然后对这个大的数据集进行筛选，这样占用 的资源就比较多，执行效率也较低。
+```
+这决定了，在需要对数据进行分组统计的时候，HAVING 可以完成 WHERE 不能完成的任务。这是因为， 在查询语法结构中，WHERE 在 GROUP BY 之前，所以无法对分组结果进行筛选。HAVING 在 GROUP BY 之 后，可以使用分组字段和分组中的计算函数，对分组的结果集进行筛选，这个功能是 WHERE 无法完成 的。另外，WHERE排除的记录不再包括在分组中。
+```
 
-小结如下：
+> 当过滤条件中有聚合函数时，则此过滤条件必须声明在HAVING中
+
+> 当过滤条件中没有聚合函数时，则此过滤条件声明在WHERE中或HAVING中都可以。但是建议声明在WHERE中
+
+
+
+**区别2：如果需要通过连接从关联表中获取需要的数据，WHERE 是先筛选后连接，而 HAVING 是先连接后筛选**
+
+```
+这一点，就决定了在关联查询中，WHERE 比 HAVING 更高效。因为 WHERE 可以先筛选，用一个筛选后的较小数据集和关联表进行连接，这样占用的资源比较少，执行效率也比较高。HAVING 则需要 先把结果集准备好，也就是用未被筛选的数据集进行关联，然后对这个大的数据集进行筛选，这样占用 的资源就比较多，执行效率也较低。
+```
+
+​	
+
+#### **小结如下：**
 
 | 关键字 | 用法                         | 缺点                                   |
 | ------ | ---------------------------- | -------------------------------------- |
 | WHERE  | 先筛选数据再关联，执行效率高 | 不能使用分组中的计算函数进行筛选       |
 | HAVING | 可以使用分组中的计算函数     | 在最后的结果集中进行筛选，执行效率较低 |
 
-**开发中的选择：** 
+#### **开发中的选择：**
 
-​	WHERE 和 HAVING 也不是互相排斥的，我们可以在一个查询里面同时使用 WHERE 和 HAVING。包含分组 统计函数的条件用 HAVING，普通条件用 WHERE。这样，我们就既利用了 WHERE 条件的高效快速，又发 挥了 HAVING 可以使用包含分组统计函数的查询条件的优点。当数据量特别大的时候，运行效率会有很 大的差别。
+```
+WHERE 和 HAVING 也不是互相排斥的，我们可以在一个查询里面同时使用 WHERE 和 HAVING。包含分组 统计函数的条件用 HAVING，普通条件用 WHERE。这样，我们就既利用了 WHERE 条件的高效快速，又发挥了 HAVING 可以使用包含分组统计函数的查询条件的优点。当数据量特别大的时候，运行效率会有很大的差别
+```
 
-## 4. SELECT的执行过程
 
-### 1) 查询的结构
+
+
+
+
+
+## SELECT的执行过程
+
+### 查询的结构
 
 ```mysql
 #方式1：
 SELECT ...,....,...
 FROM ...,...,....
 WHERE 多表的连接条件
-AND 不包含组函数的过滤条件
+AND 不包含聚合函数的过滤条件
 GROUP BY ...,...
-HAVING 包含组函数的过滤条件
+HAVING 包含聚合函数的过滤条件
 ORDER BY ... ASC/DESC
 LIMIT ...,...
 #方式2：
 SELECT ...,....,...
-FROM ... JOIN ...
+FROM ... (LEFT / RIGHT)JOIN ...
 ON 多表的连接条件
-JOIN ...
+(LEFT / RIGHT)JOIN ...
 ON ...
-WHERE 不包含组函数的过滤条件
-AND/OR 不包含组函数的过滤条件
+WHERE 不包含聚合函数的过滤条件
+AND/OR 不包含聚合函数的过滤条件
 GROUP BY ...,...
-HAVING 包含组函数的过滤条件
+HAVING 包含聚合函数的过滤条件
 ORDER BY ... ASC/DESC
 LIMIT ...,...
 #其中：
@@ -1226,19 +2097,25 @@ LIMIT ...,...
 
 **需要记住 SELECT 查询时的两个顺序：**
 
-<font color=red>1. 关键字的顺序是不能颠倒的：</font>
+<font color=red>关键字的顺序是不能颠倒的：</font>
 
 ```mysql
-SELECT ... FROM ... WHERE ... GROUP BY ... HAVING ... ORDER BY ... LIMIT...
+SELECT ... 
+FROM ... 
+WHERE ... 
+GROUP BY ... 
+HAVING ... 
+ORDER BY ... 
+LIMIT...
 ```
 
-<font color=red>1. SELECT 语句的执行顺序</font>（在 MySQL 和 Oracle 中，SELECT 执行顺序基本相同）：
+<font color=red>SELECT 语句的执行顺序：</font>
 
 ```mysql
-FROM -> WHERE -> GROUP BY -> HAVING -> SELECT 的字段 -> DISTINCT -> ORDER BY -> LIMIT
+FROM -> ON -> (LEFT / RIGHT JOIN) -> WHERE -> GROUP BY -> HAVING -> SELECT 的字段 -> DISTINCT -> ORDER BY -> LIMIT
 ```
 
-比如你写了一个 SQL 语句，那么它的关键字顺序和执行顺序是下面这样的：
+例子
 
 ```mysql
 SELECT DISTINCT player_id, player_name, count(*) as num # 顺序 5
@@ -1250,9 +2127,10 @@ ORDER BY num DESC # 顺序 6
 LIMIT 2 # 顺序 7
 ```
 
-​	在 SELECT 语句执行这些步骤的时候，每个步骤都会产生一个 虚拟表 ，然后将这个虚拟表传入下一个步 骤中作为输入。需要注意的是，这些步骤隐含在 SQL 的执行过程中，对于我们来说是不可见的。
+- 在 SELECT 语句执行这些步骤的时候，每个步骤都会产生一个 虚拟表 ，然后将这个虚拟表传入下一个步 骤中作为输入。需要注意的是，这些步骤隐含在 SQL 的执行过程中，对于我们来说是不可见的
 
-### 2) SQL的执行原理
+
+### SQL的执行原理
 
 ​	SELECT 是先执行 FROM 这一步的。在这个阶段，如果是多张表联查，还会经历下面的几个步骤：
 
@@ -1269,7 +2147,7 @@ LIMIT 2 # 顺序 7
 * 最后在 vt6 的基础上，取出指定行的记录，也就是 LIMIT 阶段 ，得到最终的结果，对应的是虚拟表 vt7 。
 * 当然我们在写 SELECT 语句的时候，不一定存在所有的关键字，相应的阶段就会省略。
 
-同时因为 SQL 是一门类似英语的结构化查询语言，所以我们在写 SELECT 语句的时候，还要注意相应的 关键字顺序，所谓底层运行的原理，就是我们刚才讲到的执行顺序。
+同时因为 SQL 是一门类似英语的结构化查询语言，所以我们在写 SELECT 语句的时候，还要注意相应的 关键字顺序，所谓底层运行的原理，就是我们刚才讲到的执行顺序
 
 
 
@@ -1277,14 +2155,14 @@ LIMIT 2 # 顺序 7
 
 # 子查询
 
-## 1. 基本使用
+## 基本使用
 
 + 子查询的基本语法结构：
 
 ![](MySQL基础篇_img/子查询.png)
 
-+ 子查询（内查询）在主查询之前一次执行完成。
-+ 子查询的结果被主查询（外查询）使用 。
++ 子查询（内查询）在主查询之前一次执行完成
++ 子查询的结果被主查询（外查询）使用  
 + **注意事项**
   + 子查询要包含在括号内
   + 将子查询放在比较条件的右侧
@@ -1298,7 +2176,7 @@ LIMIT 2 # 顺序 7
 
 **分类方式1：**
 
-我们按内查询的结果返回一条还是多条记录，将子查询分为 单行子查询 、 多行子查询 。
+我们按内查询的结果返回一条还是多条记录，将子查询分为单行子查询 、 多行子查询 
 
 + 单行子查询
 
@@ -1310,19 +2188,22 @@ LIMIT 2 # 顺序 7
 
 **分类方式2：**
 
-我们按内查询是否被执行多次，将子查询划分为 相关(或关联)子查询 和 不相关(或非关联)子查询 。 
-
-子查询从数据表中查询了数据结果，如果这个数据结果只执行一次，然后这个数据结果作为主查询的条件进行执行，那么这样的子查询叫做不相关子查询。 
-
-同样，如果子查询需要执行多次，即采用循环的方式，先从外部查询开始，每次都传入子查询进行查询，然后再将结果反馈给外部，这种嵌套的执行方式就称为相关子查询。
+- 我们按内查询是否被执行多次，将子查询划分为 相关(或关联)子查询和 不相关(或非关联)子查询 
 
 
+- 子查询从数据表中查询了数据结果，如果这个数据结果只执行一次，然后这个数据结果作为主查询的条件进行执行，那么这样的子查询叫做不相关子查询
+
+
+- 同样，如果子查询需要执行多次，即采用循环的方式，先从外部查询开始，每次都传入子查询进行查询，然后再将结果反馈给外部，这种嵌套的执行方式就称为相关子查询
 
 
 
-## 3. 单行子查询
 
-### 1) 单行比较操作符
+
+
+## 单行子查询
+
+### 单行比较操作符
 
 | 操作符 | 含义                     |
 | ------ | ------------------------ |
@@ -1333,13 +2214,13 @@ LIMIT 2 # 顺序 7
 | <=     | less than or equal to    |
 | <>     | not equal to             |
 
-### 2) 代码示例
+### 代码示例
 
-* 题目：返回job_id与141号员工相同，salary比143号员工多的员工姓名，job_id和工资
+* 题目：返回`job_id`与`141`号员工相同，`salary`比`143`号员工多的员工姓名，`job_id`和工资
 
 ```mysql
 SELECT last_name, job_id, salary
-FROM eployees
+FROM employees
 WHERE job_id = (
 	SELECT job_id
 	FROM eployees
@@ -1347,7 +2228,7 @@ WHERE job_id = (
 )
 AND salary > (
 	SELECT salary
-	FROM eployees
+	FROM employees
     WHERE employee_id = 143
 );
 ```
@@ -1390,9 +2271,31 @@ HAVING MIN(salary) >
             WHERE department_id = 50);
 ```
 
-### 3) CASE中的子查询
 
-题目：显式员工的employee_id,last_name和location。其中，若员工department_id与location_id为1800 的department_id相同，则location为’Canada’，其余则为’USA’。
+
+### HAVING 中的子查询
+
+- 首先执行子查询
+- 向查询中的HAVING子句返回结果
+
+- 题目：查询最低工资大于50号部门最低工资的部门id和其最低工资
+
+```sql
+SELECT department_id, MIN(salary) 
+FROM employees 
+GROUP BY department_id 
+HAVING MIN(salary) >
+					(SELECT MIN(salary) 
+                     FROM employees 
+                     WHERE department_id = 50);
+```
+
+
+
+### CASE中的子查询
+
+- 题目：显式员工的employee_id,last_name和location。其中，若员工department_id与location_id为1800 的department_id相同，则location为’Canada’，其余则为’USA’。
+
 
 ```mysql
 SELECT employee_id, last_name,
@@ -1404,28 +2307,28 @@ SELECT employee_id, last_name,
 FROM employees;
 ```
 
-### 4) 子查询中的空值问题
+### 子查询中的空值问题
 
 ```mysql
 SELECT last_name, job_id
 FROM employees
 WHERE job_id =
-(SELECT job_id
-FROM employees
-WHERE last_name = 'Haas');
+				(SELECT job_id
+				FROM employees
+				WHERE last_name = 'Haas');
 ```
 
 > 子查询不返回任何行
 
-### 5) 非法使用子查询
+###  非法使用子查询
 
 ```mysql
 SELECT employee_id, last_name
 FROM employees
 WHERE salary =
-(SELECT MIN(salary)
-FROM employees
-GROUP BY department_id);
+				(SELECT MIN(salary)
+				FROM employees
+				GROUP BY department_id);
 ```
 
 > 多行子查询使用单行比较符
@@ -1434,13 +2337,13 @@ GROUP BY department_id);
 
 
 
-## 4. 多行子查询
+## 多行子查询
 
 * 也称为集合比较子查询
 * 内查询返回多行
 * 使用多行比较操作符
 
-### 1) 多行比较操作符
+### 多行比较操作符
 
 | 操作符 | 含义                                                     |
 | ------ | -------------------------------------------------------- |
@@ -1449,7 +2352,7 @@ GROUP BY department_id);
 | ALL    | 需要和单行比较操作符一起使用，和子查询返回的所有值比较   |
 | SOME   | 实际上是ANY的别名，作用相同，一般常使用ANY               |
 
-### 2) 代码示例
+### 代码示例
 
 * 题目：返回其它job_id中比job_id为‘IT_PROG’部门任一工资低的员工的员工号、姓名、job_id 以及salary
 
@@ -1493,7 +2396,7 @@ HAVING AVG(salary) <= ALL (
 );
 ```
 
-### 3) 空值问题
+### 空值问题
 
 ```mysql
 SELECT last_name
@@ -1509,11 +2412,13 @@ WHERE employee_id NOT IN (
 
 
 
-## 5. 相关子查询
+## 相关子查询
 
-如果子查询的执行依赖于外部查询，通常情况下都是因为子查询中的表用到了外部的表，并进行了条件 关联，因此每执行一次外部查询，子查询都要重新计算一次，这样的子查询就称之为 关联子查询 。 
+- 如果子查询的执行依赖于外部查询，通常情况下都是因为子查询中的表用到了外部的表，并进行了条件 关联，因此每执行一次外部查询，子查询都要重新计算一次，这样的子查询就称之为 关联子查询 。 
 
-相关子查询按照一行接一行的顺序执行，主查询的每一行都执行一次子查询。
+
+- 相关子查询按照一行接一行的顺序执行，主查询的每一行都执行一次子查询。
+
 
 ![](MySQL基础篇_img/相关子查询_1.png)
 
@@ -1521,19 +2426,20 @@ WHERE employee_id NOT IN (
 
 > 说明：子查询中使用主查询中的列
 
-### 1) 代码示例
+### 代码示例
 
 * 题目：查询员工中工资大于本部门平均工资的员工的last_name,salary和其department_id
 
 ```mysql
 # 方式一：使用相关子查询
-SELECT last_name, salary, department
+SELECT last_name, salary, e1.department_id
 FROM employees e1
 WHERE salary > (
 		SELECT AVG(salary)
     	FROM employees e2
-    	WHERE department_id = e1.`department_id`
+    	WHERE e2.department_id = e1.`department_id`
 );
+
 # 方式二：在FROM中声明子查询
 SELECT e.last_name, e.salary, e.department_id
 FROM employees e, (
@@ -1569,7 +2475,11 @@ WHERE 2 <= (SELECT COUNT(*)
 );
 ```
 
-### 2) EXISTS 与 NOT EXISTS 关键字
+> 在SELECT 中， 除了GROP BY 和 LIMIT 中，其他地方都可以声明子查询
+
+
+
+### EXISTS 与 NOT EXISTS 关键字
 
 * 关联子查询通常也会和 EXISTS操作符一起来使用，用来检查在子查询中是否存在满足条件的行。
 * 如果在子查询中不存在满足条件的行：
@@ -1624,7 +2534,7 @@ WHERE NOT EXISTS (
 );
 ```
 
-### 3) 相关更新
+### 相关更新
 
 ```mysql
 UPDATE table1 alias1
@@ -1649,7 +2559,7 @@ FROM departments d
 WHERE e.department_id = d.department_id);
 ```
 
-### 4) 相关删除
+### 相关删除
 
 ```mysql
 DELETE FROM table1 alias1
@@ -1658,7 +2568,7 @@ FROM table2 alias2
 WHERE alias1.column = alias2.column);
 ```
 
-使用相关子查询依据一个表中的数据删除另一个表的数据。
+使用相关子查询依据一个表中的数据删除另一个表的数据
 
 题目：删除表employees中，其与emp_history表皆有的数据
 
@@ -1675,7 +2585,7 @@ WHERE employee_id in(
 
 
 
-## 6. 思考题
+## 思考题
 
 问题：谁的工资比Abel的高？ 解答：
 
@@ -1702,13 +2612,13 @@ WHERE salary > (
 
 解答：自连接方式好！ 
 
-题目中可以使用子查询，也可以使用自连接。一般情况建议你使用自连接，因为在许多 DBMS 的处理过 程中，对于自连接的处理速度要比子查询快得多。 可以这样理解：子查询实际上是通过未知表进行查询后的条件判断，而自连接是通过已知的自身数据表 进行条件判断，因此在大部分 DBMS 中都对自连接处理进行了优化。
+题目中可以使用子查询，也可以使用自连接。一般情况建议你使用自连接，因为在许多 DBMS 的处理过 程中，对于自连接的处理速度要比子查询快得多。 可以这样理解：子查询实际上是通过未知表进行查询后的条件判断，而自连接是通过已知的自身数据表 进行条件判断，因此在大部分 DBMS 中都对自连接处理进行了优化
 
 
 
 
 
-## 7. 课后练习
+## 课后练习
 
 1. 查询和Zlotkey相同部门的员工姓名和工资
 
@@ -2126,9 +3036,9 @@ WHERE 2 < (
 
 # 创建和管理表
 
-## 1. 基础知识
+## 基础知识
 
-### 1) 标识符命名规则
+### 标识符命名规则
 
 * 数据库名、表名不得超过30个字符，变量名限制为29个 
 * 必须只能包含 A–Z, a–z, 0–9, _共63个字符 
@@ -2137,7 +3047,7 @@ WHERE 2 < (
 * 必须保证你的字段没有和保留字、数据库系统或常用方法冲突。如果坚持使用，请在SQL语句中使 用`（着重号）引起来 
 * 保持字段名和类型的一致性：在命名字段并为其指定数据类型的时候一定要保证一致性，假如数据 类型在一个表里是整数，那在另一个表里可就别变成字符型了
 
-### 2) MySQL中的数据类型
+### MySQL中的数据类型
 
 | 类型             | 数据变量                                                     |
 | ---------------- | ------------------------------------------------------------ |
@@ -2171,9 +3081,9 @@ WHERE 2 < (
 
 
 
-## 2. 创建和管理数据库
+##  创建和管理数据库
 
-### 1) 创建数据库
+### 创建数据库
 
 * 方式1：创建数据库
 
@@ -2197,7 +3107,7 @@ WHERE 2 < (
 
 > 注意：DATABASE 不能改名。一些可视化工具可以改名，它是建新库，把所有表复制到新库，再删 旧库完成的。
 
-### 2) 使用数据库
+### 使用数据库
 
 * 查看当前所有的数据库
 
@@ -2231,15 +3141,17 @@ WHERE 2 < (
   USE 数据库名;
   ```
 
-> 注意：要操作表格和数据之前必须先说明是对哪个数据库进行操作，否则就要对所有对象加上“数 据库名.”。
+> 注意：要操作表格和数据之前必须先说明是对哪个数据库进行操作，否则就要对所有对象加上“数据库名.”。
 
-### 3) 修改数据库
+### 修改数据库
 
 * 更改数据库字符集
 
   ```mysql
   ALTER DATABASE 数据库名 CHARACTER SET 字符集; #比如：gbk、utf8等
   ```
+
+### 删除数据库
 
 * 方式1：删除指定的数据库
 
@@ -2257,25 +3169,74 @@ WHERE 2 < (
 
 
 
-## 3. 创建表
+## 创建表
 
-### 1) 创建方式1
+### 创建方式1
+
+- 必须具备：
+  - CREATE TABLE 权限
+  - 存储空间
 
 * 语法格式：
 
 ```mysql
 CREATE TABLE [IF NOT EXISTS] 表名(
-字段1, 数据类型 [约束条件] [默认值],
-字段2, 数据类型 [约束条件] [默认值],
-字段3, 数据类型 [约束条件] [默认值],
-……
-[表约束条件]
+	字段1, 数据类型 [约束条件] [默认值],
+	字段2, 数据类型 [约束条件] [默认值],
+	字段3, 数据类型 [约束条件] [默认值],
+	……
+	[表约束条件]
 );
 ```
 
-> 加上了IF NOT EXISTS关键字，则表示：如果当前数据库中不存在要创建的数据表，则创建数据表； 如果当前数据库中已经存在要创建的数据表，则忽略建表语句，不再创建数据表。
+> 加上了IF NOT EXISTS关键字，则表示：如果当前数据库中不存在要创建的数据表，则创建数据表； 如果当前数据库中已经存在要创建的数据表，则忽略建表语句，不再创建数据表
 
-### 2) 创建方式2
+- 必须指定：
+  - 表名
+  - 列名（或字段名），数据类型，长度
+- 可选指定：
+  - 约束条件
+  - 默认值
+
+- 创建表举例1:
+
+```mysql
+-- 创建表需要创建表的权限，如果创建表时，没有指定使用的字符集，则默认使用表所在数据库的字符集
+CREATE TABLE emp (
+	-- int类型 
+	emp_id INT,
+	-- 最多保存20个中英文字符 
+	emp_name VARCHAR(20),
+	-- 总位数不超过15位 
+	salary DOUBLE,
+	-- 日期类型 
+	birthday DATE );
+```
+
+```mysql
+DESC emp;
+```
+
+> MySQL在执行建表语句时，将id字段的类型设置为int(11)，这里的11实际上是int类型指定的显示宽度，默 认的显示宽度为11。也可以在创建数据表的时候指定数据的显示宽度
+
+- 创建表举例2:
+
+```mysql
+CREATE TABLE dept(
+	-- int类型，自增
+	deptno INT(2) AUTO_INCREMENT, 
+    dname VARCHAR(14), 
+    loc VARCHAR(13),
+	-- 主键
+	PRIMARY KEY (deptno)
+);
+```
+
+
+
+
+
+### 创建方式2
 
 * 使用 AS subquery 选项，将创建表和插入数据结合起来
 
@@ -2286,7 +3247,15 @@ AS subquery;
 ```
 
 * 指定的列和子查询中的列要一一对应
-* 通过列名和默认值定义列
+* 通过列名和默认值定义列，查询语句中字段的别名，可以作为新创建的表的字段的名称
+
+```mysql
+CREATE TABLE emp1 AS SELECT * FROM employees;
+
+CREATE TABLE emp2 AS SELECT * FROM employees WHERE 1=2; -- 创建的emp2是空表
+```
+
+
 
 ```mysql
 CREATE TABLE dept80
@@ -2296,7 +3265,7 @@ FROM employees
 WHERE department_id = 80;
 ```
 
-### 3) 查看数据表结构
+### 查看数据表结构
 
 在MySQL中创建好数据表之后，可以查看数据表的结构。MySQL支持使用 DESCRIBE/DESC 语句查看数据 表结构，也支持使用 SHOW CREATE TABLE 语句查看数据表结构。
 
@@ -2306,13 +3275,13 @@ WHERE department_id = 80;
 SHOW CREATE TABLE 表名\G
 ```
 
-使用SHOW CREATE TABLE语句不仅可以查看表创建时的详细语句，还可以查看存储引擎和字符编码。
+使用SHOW CREATE TABLE语句不仅可以查看表创建时的详细语句，还可以查看存储引擎和字符编码
 
 
 
 
 
-## 4. 修改表
+## 修改表
 
 修改表指的是修改数据库中已经存在的数据表的结构。
 
@@ -2323,7 +3292,7 @@ SHOW CREATE TABLE 表名\G
 + 删除现有表中的列
 + 重命名现有表中的列
 
-### 1) 追加一个列
+### 追加一个列
 
 语法格式如下：
 
@@ -2338,7 +3307,7 @@ ALTER TABLE dept80
 ADD job_id varchar(15);
 ```
 
-### 2) 修改一个列
+### 修改一个列
 
 * 可以修改列的数据类型，长度、默认值和位置 
 * 修改字段数据类型、长度、默认值、位置的语法格式如下：
@@ -2355,9 +3324,9 @@ MODIFY salary double(9,2) default 1000;
 ```
 
 * 对默认值的修改只影响今后对表的修改
-* 此外，还可以通过此种方式修改列的约束。
+* 此外，还可以通过此种方式修改列的约束
 
-### 3) 重命名一个列
+### 重命名一个列
 
 使用 CHANGE old_column new_column dataType子句重命名列。语法格式如下：
 
@@ -2372,7 +3341,7 @@ ALTER TABLE dept80
 CHANGE department_name dept_name varchar(15);
 ```
 
-### 4) 删除一个列
+### 删除一个列
 
 删除表中某个字段的语法格式如下：
 
@@ -2380,7 +3349,7 @@ CHANGE department_name dept_name varchar(15);
 ALTER TABLE 表名 DROP 【COLUMN】字段名
 ```
 
-### 5) 更改表名
+### 更改表名
 
 * 方式一：使用RENAME
 
@@ -2402,7 +3371,7 @@ RENAME [TO] detail_dept; -- [TO]可以省略
 
 
 
-## 5. 删除表
+##  删除表
 
 * 在MySQL中，当一张数据表 没有与其他任何数据表形成关联关系 时，可以将当前数据表直接删除。 
 * 数据和结构都被删除 
@@ -2428,7 +3397,7 @@ DROP TABLE dept80;
 
 
 
-## 6. 清空表
+## 清空表
 
 * TRUNCATE TABLE语句：
   * 删除表中所有的数据
@@ -2441,13 +3410,26 @@ TRUNCATE TABLE detail_dept;
 
 * TRUNCATE语句不能回滚，而使用 DELETE 语句删除数据，可以回滚
 
+* DDL 和 DML的说明
+
+  * DDL的操作一旦执行，就不可以回滚，执⾏完DDL时会⾃动提交commit，且此操作不受SET auto commit = FALSE的影响
+
+  * DML的操作默认情况下，一旦执行，也是不可以回滚的，但是，如果在执行DML 之前，执行了SET auto commit = FALSE ，则执 的DML操作就可以实现回滚
+
+    * commit：提交数据，一旦执⾏，则数据就被永久的保存在了数据库中，意味着数据不可以回滚
+
+    * ROLLBACK：回滚数据，⼀旦执⾏，则可以实现数据的回滚，回滚到最近
+
+      的⼀次COMMIT 之后
+
+
 > 阿里开发规范： 【参考】TRUNCATE TABLE 比 DELETE 速度快，且使用的系统和事务日志资源少，但 TRUNCATE 无 事务且不触发 TRIGGER，有可能造成事故，故不建议在开发代码中使用此语句。 说明：TRUNCATE TABLE 在功能上与不带 WHERE 子句的 DELETE 语句相同。
 
 
 
 
 
-## 7. 内容扩展
+## 内容扩展
 
 ### 拓展1：阿里巴巴《Java开发手册》之MySQL字段命名
 
@@ -2481,11 +3463,11 @@ TRUNCATE TABLE detail_dept;
 
 # 数据处理之增删改
 
-## 1. 插入数据
+## 插入数据
 
-### 1) 方式1：VALUES的方式添加
+### 方式1：VALUES的方式添加
 
-使用这种语法一次只能向表中插入一条数据。
+使用这种语法一次只能向表中插入一条数据
 
 **情况1：为表的所有字段按默认顺序插入数据**
 
@@ -2494,7 +3476,7 @@ INSERT INTO 表名
 VALUES (value1,value2,....);
 ```
 
-值列表中需要为表的每一个字段指定值，并且值的顺序必须和数据表中字段定义时的顺序相同。
+值列表中需要为表的每一个字段指定值，并且值的顺序必须和数据表中字段定义时的顺序相同
 
 举例：
 
@@ -2544,9 +3526,14 @@ VALUES
 * Duplicates：表明插入时被忽略的记录，原因可能是这 些记录包含了重复的主键值。 
 * Warnings：表明有问题的数据值，例如发生数据类型转换。
 
-> 一个同时插入多行记录的INSERT语句等同于多个单行插入的INSERT语句，但是多行的INSERT语句 在处理过程中 效率更高 。因为MySQL执行单条INSERT语句插入多行数据比使用多条INSERT语句 快，所以在插入多条记录时最好选择使用单条INSERT语句的方式插入。
+> 一个同时插入多行记录的INSERT语句等同于多个单行插入的INSERT语句，但是多行的INSERT语句 在处理过程中 效率更高 。因为MySQL执行单条INSERT语句插入多行数据比使用多条INSERT语句 快，所以在插入多条记录时最好选择使用单条INSERT语句的方式插入
 
-### 2) 方式2：将查询结果插入到表中
+#### 小结：
+
+- VALUES 也可以写成 VALUE ，但是VALUES是标准写法
+- 字符和日期型数据应包含在单引号中
+
+### 方式2：将查询结果插入到表中
 
 INSERT还可以将SELECT语句查询的结果插入到表中，此时不需要把每一条记录的值一个一个输入，只需要使用一条INSERT语句和一条SELECT语句组成的组合语句即可快速地从一个或多个表中向一个表中插入多行
 
@@ -2561,7 +3548,7 @@ FROM 源表名
 
 * 在 INSERT 语句中加入子查询。 
 * 不必书写 VALUES 子句。 
-* 子查询中的值列表应与 INSERT 子句中的列名对应。
+* 子查询中的值列表应与 INSERT 子句中的列名对应。添加数据的字段的长度不能低于查询的字段的长度，否则会有风险
 
 ```mysql
 INSERT INTO emp2
@@ -2581,7 +3568,7 @@ WHERE job_id LIKE '%REP%';
 
 
 
-## 2. 更新数据
+##  更新数据
 
 * 使用 UPDATE 语句更新数据。语法如下：
 
@@ -2604,9 +3591,26 @@ WHERE employee_id = 113;
 
 * 如果省略 WHERE 子句，则表中的所有数据都将被更新。
 
+```mysql
+UPDATE copy_emp
+SET department_id = 110;
+```
+
+- 更新中的数据完整性错误
+
+```mysql
+UPDATE employees 
+SET department_id = 55 
+WHERE department_id = 110;
+```
+
+> 说明不存在55号部门
 
 
-## 3. 删除数据
+
+## 删除数据
+
+- 使用DELETE语句从表中删除数据
 
 ```mysql
 DELETE FROM table_name [WHERE <condition>];
@@ -2614,9 +3618,30 @@ DELETE FROM table_name [WHERE <condition>];
 
 ​	table_name指定要执行删除操作的表；“[WHERE ]”为可选参数，指定删除条件，如果没有WHERE子句， DELETE语句将删除表中的所有记录。
 
+- 使用 WHERE 子句删除指定的记录。
+
+```mysql
+DELETE FROM departments 
+WHERE department_name = 'Finance';
+```
+
+- 如果省略 WHERE 子句，则表中的全部数据将被删除
+
+```mysql
+DELETE FROM copy_emp;
+```
+
+- 删除中的数据完整性错误
+
+```mysql
+DELETE FROM departments WHERE department_id = 60;
+```
+
+> 说明：You cannot delete a row that contains a primary key that is used as a foreign key in another table.
 
 
-## 4. MySQL8新特性：计算列
+
+## MySQL8新特性：计算列
 
 ​	什么叫计算列呢？简单来说就是某一列的值是通过别的列计算得来的。例如，a列值为1、b列值为2，c列 不需要手动插入，定义a+b的结果为c的值，那么c就是计算列，是通过别的列计算得来的。
 
@@ -2631,6 +3656,26 @@ a INT,
 b INT,
 c INT GENERATED ALWAYS AS (a + b) VIRTUAL
 );
+```
+
+```mysql
+INSERT INTO tb1(a,b) VALUES (100,200);
+```
+
+```mysql
+mysql> SELECT * FROM tb1; 
++------+------+------+------+ 
+| id | a | b | c | 
++------+------+------+------+ 
+| NULL | 100 | 200 | 300 | 
++------+------+------+------+ 
+1 row in set (0.00 sec)
+```
+
+```mysql
+mysql> UPDATE tb1 SET a = 500;
+Query OK, 0 rows affected (0.00 sec) 
+Rows matched: 1 Changed: 0 Warnings: 0
 ```
 
 
@@ -2975,7 +4020,7 @@ SET类型在存储数据时成员个数越多，其占用的存储空间越大�
 
 # 约束
 
-## 1. 约束的分类
+## 约束的分类
 
 * 根据约束数据列的限制，约束可分为：
   + 单列约束：每个约束只约束一列
@@ -3010,26 +4055,26 @@ WHERE table_name = '表名称';
 
 
 
-## 2. 非空约束
+##  非空约束
 
-### 1) 作用
+### 作用
 
 限定某个字段/ 某列的值不允许为空
 
-### 2) 关键字
+###  关键字
 
 NOT NULL
 
-### 3) 特点
+### 特点
 
 * 默认，所有的类型的值都可以是NULL，包括INT、FLOAT等数据类型 
 * 非空约束只能出现在表对象的列上，只能某个列单独限定非空，不能组合非空 
 * 一个表可以有很多列都分别限定了非空 
 * 空字符串''不等于NULL，0也不等于NULL
 
-### 4) 添加非空约束
+### 添加非空约束
 
-**1. 建表时**
+**建表时**
 
 ```mysql
 CREATE TABLE 表名称(
@@ -3039,13 +4084,13 @@ CREATE TABLE 表名称(
 );
 ```
 
-**2. 建表后**
+**建表后**
 
 ```mysql
 alter table 表名称 modify 字段名 数据类型 not null;
 ```
 
-### 5) 删除非空约束
+### 删除非空约束
 
 ```mysql
 alter table 表名称 modify 字段名 数据类型 NULL;#去掉not null，相当于修改某个非注解字段，该字段允许为空
@@ -3057,27 +4102,27 @@ alter table 表名称 modify 字段名 数据类型;#去掉not null，相当于�
 
 
 
-## 3. 唯一性约束
+##  唯一性约束
 
-### 1) 作用
+###  作用
 
 用来限制某个字段/某列的值不能重复。
 
-### 2) 关键字
+### 关键字
 
 UNIQUE
 
-### 3) 特点
+### 特点
 
-* 同一个表可以有多个唯一约束。
-* 唯一约束可以是某一个列的值唯一，也可以多个列组合的值唯一。 
-* 唯一性约束允许列值为空。 
-* 在创建唯一约束的时候，如果不给唯一约束命名，就默认和列名相同。 
-* MySQL会给唯一约束的列上默认创建一个唯一索引。
+* 同一个表可以有多个唯一约束
+* 唯一约束可以是某一个列的值唯一，也可以多个列组合的值唯一
+* 唯一性约束允许列值为空
+* 在创建唯一约束的时候，如果不给唯一约束命名，就默认和列名相同
+* MySQL会给唯一约束的列上默认创建一个唯一索引
 
-### 4) 添加唯一约束
+### 添加唯一约束
 
-**1. 建表时**
+**建表时**
 
 ```mysql
 create table 表名称(
@@ -3104,12 +4149,12 @@ NAME VARCHAR(25),
 PASSWORD VARCHAR(16),
 -- 使用表级约束语法
 CONSTRAINT uk_name_pwd UNIQUE(NAME,PASSWORD)
-);
+);con
 ```
 
 > 表示用户名和密码组合不能重复
 
-**2. 建表后指定唯一键约束**
+**建表后指定唯一键约束**
 
 ```mysql
 #字段列表中如果是一个字段，表示该列的值唯一。如果是两个或更多个字段，那么复合唯一，即多个字段的组合是唯
@@ -3120,7 +4165,7 @@ alter table 表名称 add unique key(字段列表);
 alter table 表名称 modify 字段名 字段类型 unique;
 ```
 
-### 5) 关于复合唯一约束
+### 关于复合唯一约束
 
 ```mysql
 create table 表名称(
@@ -3155,17 +4200,17 @@ DROP INDEX uk_name_pwd;
 
 
 
-## 4. PRIMARY KEY 约束
+## PRIMARY KEY 约束
 
-### 1) 作用
+### 作用
 
-用来唯一标识表中的一行记录。
+用来唯一标识表中的一行记录
 
-### 2) 关键字
+### 关键字
 
 primary key
 
-### 3) 特点
+### 特点
 
 主键约束相当于唯一约束+非空约束的组合，主键约束列不允许重复，也不允许出现空值。
 
@@ -3514,9 +4559,9 @@ alter table 表名称 modify 字段名 数据类型 not null; #删除默认值�
 
 MySQL支持多种存储引擎，每一个表都可以指定一个不同的存储引擎，需要注意的是：外键约束是用来 保证数据的参照完整性的，如果表之间需要关联外键，却指定了不同的存储引擎，那么这些表之间是不 能创建外键约束的。所以说，存储引擎的选择也不完全是随意的。
 
-# 第14章_视图
+# 视图
 
-## 1. 常见的数据库对象
+##  常见的数据库对象
 
 | 对象                 | 描述                                                         |
 | -------------------- | ------------------------------------------------------------ |
@@ -3529,19 +4574,21 @@ MySQL支持多种存储引擎，每一个表都可以指定一个不同的存储
 | 存储函数 (FUNCTION)  | 用于完成一次特定的计算，具有一个返回值                       |
 | 触发器 (TRIGGER)     | 相当于一个事件监听器，当数据库发生特定事件后，触发器被触发，完成相应的处理 |
 
-## 2. 视图概述
+## 视图概述
 
-* 视图是一种 虚拟表 ，本身是 不具有数据 的，占用很少的内存空间，它是 SQL 中的一个重要概念。 
+* 视图是一种 虚拟表 ，本身是 不具有数据的，占用很少的内存空间，它是 SQL 中的一个重要概念。 
 * 视图建立在已有表的基础上, 视图赖以建立的这些表称为基表。
 
 ![](MySQL基础篇_img/视图查询.png)
 
-* 视图的创建和删除只影响视图本身，不影响对应的基表。但是当对视图中的数据进行增加、删除和 修改操作时，数据表中的数据会相应地发生变化，反之亦然。
+* 视图的创建和删除只影响视图本身，不影响对应的基表。但是当对视图中的数据进行增加、删除和修改操作时，数据表中的数据会相应地发生变化，反之亦然。 
 * 视图提供数据内容的语句为 SELECT 语句, 可以将视图理解为存储起来的 SELECT 语句 
-  * 在数据库中，视图不会保存数据，数据真正保存在数据表中。当对视图中的数据进行增加、删 除和修改操作时，数据表中的数据会相应地发生变化；反之亦然。
-* 视图，是向用户提供基表数据的另一种表现形式。通常情况下，小型项目的数据库可以不使用视 图，但是在大型项目中，以及数据表比较复杂的情况下，视图的价值就凸显出来了，它可以帮助我 们把经常查询的结果集放到虚拟表中，提升使用效率。理解和使用起来都非常方便。
+  * 在数据库中，视图不会保存数据，数据真正保存在数据表中。当对视图中的数据进行增加、删除和修改操作时，数据表中的数据会相应地发生变化；反之亦然
+* 视图，是向用户提供基表数据的另一种表现形式。通常情况下，小型项目的数据库可以不使用视 图，但是在大型项目中，以及数据表比较复杂的情况下，视图的价值就凸显出来了，它可以帮助我 们把经常查询的结果集放到虚拟表中，提升使用效率。理解和使用起来都非常方便
 
-## 3. 创建视图
+> 简化查询，控制访问
+
+##  创建视图
 
 * 在 CREATE VIEW 语句中嵌入子查询
 
@@ -3560,7 +4607,7 @@ CREATE VIEW 视图名称
 AS 查询语句
 ```
 
-### 1) 创建单表视图
+### 创建单表视图
 
 举例：
 
@@ -3573,7 +4620,9 @@ FROM employees
 WHERE department_id = 80;
 
 # 方式二：
-CREATE VIEW empsalary8000(emp_id, NAME, monthly_sal) # 小括号内字段个数与SELECT中字段个数相同
+CREATE VIEW empsalary8000(emp_id, NAME, monthly_sal) 
+# 小括号内字段个数与SELECT中字段个数相同
+# 查询语句中字段的别名会作为视图中字段的名称
 AS
 SELECT employee_id, last_name, salary
 FROM employees
@@ -3666,18 +4715,21 @@ SHOW CREATE VIEW 视图名称;
 
 ### 1) 一般情况
 
-MySQL支持使用INSERT、UPDATE和DELETE语句对视图中的数据进行插入、更新和删除操作。当视图中的 数据发生变化时，数据表中的数据也会发生变化，反之亦然。
+MySQL支持使用INSERT、UPDATE和DELETE语句对视图中的数据进行插入、更新和删除操作。当视图中的数据发生变化时，数据表中的数据也会发生变化，反之亦然
 
 举例：UPDATE操作
 
 ```mysql
-UPDATE emp_tel SET tel = '13789091234' WHERE ename = '孙洪亮';
+UPDATE emp_tel 
+SET tel = '13789091234' 
+WHERE ename = '孙洪亮';
 ```
 
 举例：DELETE操作
 
 ```mysql
- DELETE FROM emp_tel WHERE ename = '孙洪亮';
+ DELETE FROM emp_tel 
+ WHERE ename = '孙洪亮';
 ```
 
 ### 2) 不可更新的视图
@@ -3690,7 +4742,7 @@ UPDATE emp_tel SET tel = '13789091234' WHERE ename = '孙洪亮';
 * 在定义视图的SELECT语句后的字段列表中使用了 数学表达式 或 子查询 ，视图将不支持INSERT，也 不支持UPDATE使用了数学表达式、子查询的字段值； 
 * 在定义视图的SELECT语句后的字段列表中使用 DISTINCT 、 聚合函数 、 GROUP BY 、 HAVING 、 UNION 等，视图将不支持INSERT、UPDATE、DELETE； 
 * 在定义视图的SELECT语句中包含了子查询，而子查询中引用了FROM后面的表，视图将不支持 INSERT、UPDATE、DELETE； 
-* 视图定义基于一个 不可更新视图 ； 常量视图。
+* 视图定义基于一个不可更新视图 ； 常量视图。
 
 > 虽然可以更新视图数据，但总的来说，视图作为虚拟表 ，主要用于方便查询 ，不建议更新视图的数据。对视图数据的更改，都是通过对实际数据表里数据的操作来完成的。
 
@@ -4226,7 +5278,7 @@ DROP {PROCEDURE | FUNCTION} [IF EXISTS] 存储过程或函数的名
 
 **系统变量分类**
 
-变量由系统定义，不是用户定义，属于 服务器 层面。启动MySQL服务，生成MySQL服务实例期间， MySQL将为MySQL服务器内存中的系统变量赋值，这些系统变量定义了当前MySQL服务实例的属性、特 征。这些系统变量的值要么是 编译MySQL时参数 的默认值，要么是 配置文件 （例如my.ini等）中的参数 值。大家可以通过网址 https://dev.mysql.com/doc/refman/8.0/en/server-systemvariables.html 查看MySQL文档的系统变量。
+变量由系统定义，不是用户定义，属于 服务器 层面。启动MySQL服务，生成MySQL服务实例期间， MySQL将为MySQL服务器内存中的系统变量赋值，这些系统变量定义了当前MySQL服务实例的属性、特 征。这些系统变量的值要么是 编译MySQL时参数 的默认值，要么是 配置文件 （例如my.ini等）中的参数 值。大家可以通过网址 https://dev.mysql.com/doc/refman/8.0/en/server-systemvariables.html 查看MySQL文档的系统变量。d
 
 系统变量分为全局系统变量（需要添加 global 关键字）以及会话系统变量（需要添加 session 关键字），有时也把全局系统变量简称为全局变量，有时也把会话系统变量称为local变量。如果不写，默认会话级别。静态变量（在 MySQL 服务实例运行期间它们的值不能使用 set 动态修改）属于特殊的全局系统变量。
 
@@ -6017,4 +7069,4 @@ SELECT employee_id,last_name FROM cte WHERE n >= 3;
 
 ### 3) 小结
 
-公用表表达式的作用是可以替代子查询，而且可以被多次引用。递归公用表表达式对查询有一个共同根 节点的树形结构数据非常高效，可以轻松搞定其他查询方式难以处理的查询。
+公用表表达式的作用是可以替代子查询，而且可以被多次引用。  
